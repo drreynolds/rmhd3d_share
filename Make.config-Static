@@ -50,19 +50,6 @@ DISCRETIZATION =
 #EXTRADEFS = -DPARALLEL -DNOVISCFLUX -DDYNAMIC
 EXTRADEFS = -DPARALLEL -DDYNAMIC
 
-# preconditioning:  -DFASTWAVE, -DBLKTRIDIAG, -DVISCHYPRE
-#     default is to use no preconditioning.  
-#     FASTWAVE implies the use of fastwave_prec preconditioning
-#     BLKTRIDIAG implies the use of block tridiagonal precond.
-#     VISCHYPRE implies the use of system MG withing HYPRE for only
-# 	 preconditioning of the viscous terms.
-#PRECOND = 
-#PRECOND = -DBLKTRIDIAG
-#PRECOND = -DFASTWAVE -DVISCHYPRE
-#PRECOND = -DFASTWAVE
-PRECOND = -DVISCHYPRE
-
-
 # HYPRE-specific preprocessor directives
 # Note: if we're NOT using -DPARALLEL, then we must use -DHYPRE_SEQUENTIAL
 #HYPRE_DEFS = -DHYPRE_SEQUENTIAL
