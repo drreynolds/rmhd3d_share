@@ -250,9 +250,6 @@ c======= Inclusions ===========
 #ifdef PARALLEL
       use mpistuff
 #endif
-#ifdef FASTWAVE
-      use fastwaveprec_data
-#endif
 
 c======= Declarations =========
       implicit none
@@ -280,9 +277,6 @@ c======= Declarations =========
      &     mxconvfails, lintol, dtinit, maxdt, mindt, nonlincoeff, rtol, 
      &     atol1, atol2, atol3, atol4, atol5, atol6, atol7, atol8, 
      &     tstop, dtfac
-#ifdef FASTWAVE
-      namelist /fwprec/ NWaves, ordering, ADIcorrection
-#endif
 
 c======= Internals ============
 
@@ -561,7 +555,7 @@ c        J*v routine specification
 c        preconditioner solver specification
       call fcvspilssetprec(useMyPrec, cvierr)
 #ifdef PARALLEL
-      call MPI_Allreduce( cvierr, cvierrtot, 1, MPI_INTEGER, MPI_SUM, 
+      call MPI_Allreduce(cvierr, cvierrtot, 1, MPI_INTEGER, MPI_SUM, 
      &     comm3d, ierr)
       if (cvierrtot /= 0) then
          if(outnode)
@@ -580,115 +574,25 @@ c        preconditioner solver specification
 #endif
 
 
-
-#ifdef FASTWAVE
-c        input fastwave preconditioner options 
-      inquire(file='fwprec.inp',exist=iofile) 
-      if (iofile) then 
-         open(unit=811,file='fwprec.inp',status='old') 
-         read(811,nml=fwprec) 
-         close(unit=811,status='keep') 
-         if (ADIcorrection == 0) then 
-            ADIcorr = .false. 
-         endif 
-         if ((Nwaves<0) .or. (Nwaves>8)) then 
-            Nwaves = 8 
-         endif 
-         if ((ordering<0) .or. (ordering>2)) then 
-            ordering = 0 
-         endif 
-      endif 
-      write(*,*) 'FastWave Preconditioner options:' 
-      write(*,'(A,i2)') '    NWaves =',NWaves 
-      write(*,'(A,i2)') '    ordering =',ordering 
-      write(*,*) '   ADIcorr =',ADIcorr 
-#endif
-
-
-
-#ifdef VISCHYPRE
-c        custom viscous momentum preconditioner initialization
+c     call custom preconditioner initialization routines
+      call combo_prec_init(cvierr)
 #ifdef PARALLEL
-      call FVPrecDuInit(xlocal, ylocal, zlocal, dx, dy, dz, 
-     &     nspecies, xghost, yghost, zghost, Xprocs, Yprocs, 
-     &     Zprocs, iprocx, iprocy, iprocz, left, right, top, 
-     &     bottom, forward, behind, xbc, ybc, zbc, cvierr)
-      call MPI_Allreduce( cvierr, cvierrtot, 1, MPI_INTEGER, MPI_SUM, 
+      call MPI_Allreduce(cvierr, cvierrtot, 1, MPI_INTEGER, MPI_SUM, 
      &     comm3d, ierr)
       if (cvierrtot /= 0) then
-         if(outnode)
-     &        print '(A,A)',' impCVODE_driver: FVPrecDuInit failed'
-         if (cvierr /= 0) 
-     &        print '(A,i4,A,i2)','    proc ',my_id,': ier =',cvierr
+         if(outnode) print *,' impCVODE_driver: combo_prec_init failed'
+         if (cvierr /= 0) print '(A,i4,A,i2)','    proc ',my_id,
+     &        ': ier =',cvierr
          return
       end if
       call mpi_barrier(comm3d,ierr)
 #else
-      call FVPrecDuInit(xlocal, ylocal, zlocal, dx, dy, dz, 
-     &     nspecies, xghost, yghost, zghost, Xprocs, Yprocs, 
-     &     Zprocs, 0, 0, 0, 0, 0, 0, 0, 0, 0, xbc, ybc, zbc, cvierr)
       if (cvierr /= 0) then
-         print '(A,A,i2)',' impCVODE_driver: FVPrecDuInit',
-     &        ' failed, ier =',cvierr 
+         print '(A,A,i2)',' impCVODE_driver: combo_prec_init failed, ',
+     &        ' ier =',cvierr 
          return
       end if
 #endif
-
-c        custom viscous magnetic field preconditioner initialization
-#ifdef PARALLEL
-      call FVPrecDbInit(xlocal, ylocal, zlocal, dx, dy, dz, 
-     &     nspecies, xghost, yghost, zghost, Xprocs, Yprocs, 
-     &     Zprocs, iprocx, iprocy, iprocz, left, right, top, 
-     &     bottom, forward, behind, xbc, ybc, zbc, cvierr)
-      call MPI_Allreduce( cvierr, cvierrtot, 1, MPI_INTEGER, MPI_SUM, 
-     &     comm3d, ierr)
-      if (cvierrtot /= 0) then
-         if(outnode)
-     &        print '(A,A)',' impCVODE_driver: FVPrecDbInit failed'
-         if (cvierr /= 0) 
-     &        print '(A,i4,A,i2)','    proc ',my_id,': ier =',cvierr
-         return
-      end if
-      call mpi_barrier(comm3d,ierr)
-#else
-      call FVPrecDbInit(xlocal, ylocal, zlocal, dx, dy, dz, 
-     &     nspecies, xghost, yghost, zghost, Xprocs, Yprocs, 
-     &     Zprocs, 0, 0, 0, 0, 0, 0, 0, 0, 0, xbc, ybc, zbc, cvierr)
-      if (cvierr /= 0) then
-         print '(A,A,i2)',' impCVODE_driver: FVPrecDbInit',
-     &        ' failed, ier =',cvierr 
-         return
-      end if
-#endif
-
-c        custom viscous energy preconditioner initialization
-#ifdef PARALLEL
-      call FVPrecDeInit(xlocal, ylocal, zlocal, dx, dy, dz, 
-     &     nspecies, xghost, yghost, zghost, Xprocs, Yprocs, 
-     &     Zprocs, iprocx, iprocy, iprocz, left, right, top, 
-     &     bottom, forward, behind, xbc, ybc, zbc, cvierr)
-      call MPI_Allreduce( cvierr, cvierrtot, 1, MPI_INTEGER, MPI_SUM, 
-     &     comm3d, ierr)
-      if (cvierrtot /= 0) then
-         if(outnode)
-     &        print '(A,A)',' impCVODE_driver: FVPrecDeInit failed'
-         if (cvierr /= 0) 
-     &        print '(A,i4,A,i2)','    proc ',my_id,': ier =',cvierr
-         return
-      end if
-      call mpi_barrier(comm3d,ierr)
-#else
-      call FVPrecDeInit(xlocal, ylocal, zlocal, dx, dy, dz, 
-     &     nspecies, xghost, yghost, zghost, Xprocs, Yprocs, 
-     &     Zprocs, 0, 0, 0, 0, 0, 0, 0, 0, 0, xbc, ybc, zbc, cvierr)
-      if (cvierr /= 0) then
-         print '(A,A,i2)',' impCVODE_driver: FVPrecDeInit',
-     &        ' failed, ier =',cvierr 
-         return
-      end if
-#endif
-#endif
-
 
       return
       end subroutine CvodeInit
@@ -711,22 +615,10 @@ c======= Internals ============
 
 
 c     free preconditioner data
-#ifdef VISCHYPRE
-      call FVPrecDuFree
-      call FVPrecDbFree
-      call FVPrecDeFree
-#endif
-#ifdef FASTWAVE
-      call fastwave_free
-#endif
-#ifdef BLKTRIDIAG
-      call block_tridiag_free
-#endif
-
+      call combo_prec_free()
 
 c     free cvode internal data
       call fcvfree
-
 
 c     if using dynamic meshing, deallocate cvode_data structures
 #ifdef DYNAMIC
@@ -869,49 +761,8 @@ c     set jcur flag
 c     if required (jok), call preconditioning setup routine
       if (jok == 0) then
 
-c        perform hyperbolic preconditioning, if required
-#ifdef FASTWAVE
-c           fast wave preconditioning setup
-         call fastwave_pset(uu, fu, gamdt, v1, v2, cvier)
-
-#elif BLKTRIDIAG
-c           block tridiagonal preconditioning setup
-         call blk_tridiag_pset(uu, v1, cvier)
-
-c           perform block decomposition on the directional Jacobians
-         call blk_tridiag_decomp(gamdt, cvier)
-#endif
-
-c        perform viscous preconditioning, if required
-#ifdef VISCHYPRE
-c           set non-dimensionalization parameters to 1.D0
-         Re = 1.D0
-         Pr = 1.D0
-         Lu = 1.D0
-
-c           call viscous preconditioning setup routines
-         call fvprecdusetup(uu, gamdt, mu, Re, v1, v2, ier)
-         if (ier /= 0) then
-            cvier = ier
-            write(0,*) '    fvprecdusetup error =', ier
-            return
-         endif
-        
-         call fvprecdbsetup(uu, gamdt, Lu, eta, v1, v2, ier)
-         if (ier /= 0) then
-            cvier = ier
-            write(0,*) '    fvprecdbsetup error =', ier
-            return
-         endif
-
-         call fvprecdesetup(uu, gamdt, gamma, kappa, Re, Pr, rgas, 
-     &        v1, v2, ier)
-         if (ier /= 0) then
-            cvier = ier
-            write(0,*) '    fvprecdesetup error =', ier
-            return
-         endif
-#endif         
+c        set up preconditioners
+         call combo_prec_setup(uu, fu, gamdt, v1, v2, cvier)
 
 c        update jcur flag
          jcur = 1
@@ -994,18 +845,8 @@ c     copy rhs into solution so that solver only uses one vector
          end do
       end do
 
-#ifdef FASTWAVE
-c     call fast wave preconditioning solve routine
-      call fastwave_psol(uu, fu, gamdt, zz, vt, cvier)
-#elif BLKTRIDIAG
-c     call block tridiagonal preconditioning solve routine
-      call blk_tridiag_psol(gamdt, zz, vt, cvier)
-#endif
-
-#ifdef VISCHYPRE
-c     call viscous preconditioning solver routine
-      call vprec_solver(uu, gamdt, delta, zz, vt, cvier)
-#endif
+c     call preconditioner solvers
+      call combo_prec_solve(uu, fu, gamdt, delta, zz, vt, cvier)
 
 c     re-set vt to ameliorate cvode bug
       do l=1,nvar,1

@@ -292,9 +292,6 @@ c======= Inclusions ===========
 #ifdef PARALLEL
       use mpistuff
 #endif
-#ifdef FASTWAVE 
-      use fastwaveprec_data 
-#endif 
 
 c======= Declarations =========
       implicit none
@@ -328,9 +325,6 @@ c======= Declarations =========
      &     f1sc, f2sc, f3sc, f4sc, f5sc, f6sc, f7sc, f8sc, u1con, 
      &     u2con, u3con, u4con, u5con, u6con, u7con, u8con, 
      &     theta, dtfac, tstop
-#ifdef FASTWAVE 
-      namelist /fwprec/ NWaves, ordering, ADIcorrection 
-#endif
 
 c======= Internals ============
 
@@ -644,129 +638,24 @@ c        preconditioner setup/solve (0 => default, 1 => custom routine)
 #endif
 
 
-#ifdef FASTWAVE 
-c        input fastwave preconditioner options 
-      inquire(file='fwprec.inp',exist=iofile) 
-      if (iofile) then 
-         open(unit=811,file='fwprec.inp',status='old') 
-         read(811,nml=fwprec) 
-         close(unit=811,status='keep') 
-         if (ADIcorrection == 0) then 
-            ADIcorr = .false. 
-         endif 
-         if ((Nwaves<0) .or. (Nwaves>8)) then 
-            Nwaves = 8 
-         endif 
-         if ((ordering<0) .or. (ordering>2)) then 
-            ordering = 0 
-         endif 
-      endif 
-      if (outnode) then
-         write(*,*) 'FastWave Preconditioner options:' 
-         write(*,'(A,i2)') '    NWaves =',NWaves 
-         write(*,'(A,i2)') '    ordering =',ordering 
-         write(*,*) '   ADIcorr =',ADIcorr 
-      endif
-#endif 
-
-
-
-#ifdef VISCHYPRE
-c     custom viscous momentum preconditioner initialization
-c        ensure that we send the correct integer kind through the interface
-      xlocal = nxlsize
-      ylocal = nylsize
-      zlocal = nzlsize
-      nspecies = nvar
-c     set up Kinsol NVector interface information using mesh variables
-      xghost = nghost;  yghost = 0;  zghost = 0
-#ifndef ONE_D
-      yghost = nghost
-#ifndef TWO_D 
-      zghost = nghost
-#endif
-#endif
-
-
+c     call custom preconditioner initialization routines
+      call combo_prec_init(kier)
 #ifdef PARALLEL
-      call FVPrecDuInit(xlocal, ylocal, zlocal, dx, dy, dz, 
-     &     nspecies, xghost, yghost, zghost, Xprocs, Yprocs, 
-     &     Zprocs, iprocx, iprocy, iprocz, left, right, top, 
-     &     bottom, forward, behind, xbc, ybc, zbc, kier)
       call MPI_Allreduce( kier, kiertot, 1, MPI_INTEGER, MPI_SUM, 
      &     comm3d, ierr)
       if (kiertot /= 0) then
-         if(outnode) 
-     &        print '(A,A)',' impRMHD_driver: FVPrecDuInit failed'
-         if (kier /= 0) 
-     &        print '(A,i4,A,i2)','    proc ',my_id,': ier =',kier
+         if(outnode) print *,' impRMHD_driver: combo_prec_init failed'
+         if (kier /= 0) print '(A,i4,A,i2)','    proc ',my_id,
+     &        ': ier =',kier
          return
       end if
       call mpi_barrier(comm3d,ierr)
 #else
-      call FVPrecDuInit(xlocal, ylocal, zlocal, dx, dy, dz, 
-     &     nspecies, xghost, yghost, zghost, Xprocs, Yprocs, 
-     &     Zprocs, 0, 0, 0, 0, 0, 0, 0, 0, 0, xbc, ybc, zbc, kier)
       if (kier /= 0) then
-         print '(A,A,i2)',' impRMHD_driver: FVPrecDuInit',
-     &        ' failed, ier =',kier 
+         print '(A,A,i2)',' impRMHD_driver: combo_prec_init failed, ',
+     &        ' ier =',kier 
          return
       end if
-#endif
-
-c        custom viscous magnetic field preconditioner initialization
-#ifdef PARALLEL
-      call FVPrecDbInit(xlocal, ylocal, zlocal, dx, dy, dz, 
-     &     nspecies, xghost, yghost, zghost, Xprocs, Yprocs, 
-     &     Zprocs, iprocx, iprocy, iprocz, left, right, top, 
-     &     bottom, forward, behind, xbc, ybc, zbc, kier)
-      call MPI_Allreduce( kier, kiertot, 1, MPI_INTEGER, MPI_SUM, 
-     &     comm3d, ierr)
-      if (kiertot /= 0) then
-         if(outnode) 
-     &        print '(A,A)',' impRMHD_driver: FVPrecDbInit failed'
-         if (kier /= 0) 
-     &        print '(A,i4,A,i2)','    proc ',my_id,': ier =',kier
-         return
-      end if
-      call mpi_barrier(comm3d,ierr)
-#else
-      call FVPrecDbInit(xlocal, ylocal, zlocal, dx, dy, dz, 
-     &     nspecies, xghost, yghost, zghost, Xprocs, Yprocs, 
-     &     Zprocs, 0, 0, 0, 0, 0, 0, 0, 0, 0, xbc, ybc, zbc, kier)
-      if (kier /= 0) then
-         print '(A,A,i2)',' impRMHD_driver: FVPrecDbInit',
-     &        ' failed, ier =',kier 
-         return
-      end if
-#endif
-
-c        custom viscous energy preconditioner initialization
-#ifdef PARALLEL
-      call FVPrecDeInit(xlocal, ylocal, zlocal, dx, dy, dz, 
-     &     nspecies, xghost, yghost, zghost, Xprocs, Yprocs, 
-     &     Zprocs, iprocx, iprocy, iprocz, left, right, top, 
-     &     bottom, forward, behind, xbc, ybc, zbc, kier)
-      call MPI_Allreduce( kier, kiertot, 1, MPI_INTEGER, MPI_SUM, 
-     &     comm3d, ierr)
-      if (kiertot /= 0) then
-         if(outnode) 
-     &        print '(A,A)',' impRMHD_driver: FVPrecDeInit failed'
-         if (kier /= 0) 
-     &        print '(A,i4,A,i2)','    proc ',my_id,': ier =',kier
-         return
-      end if
-      call mpi_barrier(comm3d,ierr)
-#else
-      call FVPrecDeInit(xlocal, ylocal, zlocal, dx, dy, dz, 
-     &     nspecies, xghost, yghost, zghost, Xprocs, Yprocs, 
-     &     Zprocs, 0, 0, 0, 0, 0, 0, 0, 0, 0, xbc, ybc, zbc, kier)
-      if (kier /= 0) then
-         print '(A,A,i2)',' impRMHD_driver: FVPrecDeInit',
-     &        ' failed, ier =',kier 
-         return
-      end if
-#endif
 #endif
 
 
@@ -815,18 +704,7 @@ c======= Internals ============
 
 
 c     free preconditioner data
-#ifdef VISCHYPRE
-      call FVPrecDuFree
-      call FVPrecDbFree
-      call FVPrecDeFree
-#endif
-#ifdef FASTWAVE
-      call fastwave_free
-#endif
-#ifdef BLKTRIDIAG
-      call block_tridiag_free
-#endif
-
+      call combo_prec_free()
 
 c     free kinsol internal data
       call fkinfree
@@ -956,48 +834,8 @@ c     if freezePrec is set to 1, set to 2
 c     set gamdt (in the general Jacobian sense of Jtot = I - gamdt*Jf)
       gamdt = theta*dt
 
-c     perform hyperbolic preconditioning, if required
-#ifdef FASTWAVE
-c        call the fast wave preconditioning setup routine
-      call fastwave_pset(uu, fu, gamdt, v1, v2, kier)
-#elif BLKTRIDIAG
-c        call the block tridiagonal preconditioning setup routine
-      call blk_tridiag_pset(uu, v1, kier)
-
-c        perform block decomposition on the directional Jacobians
-      call blk_tridiag_decomp(gamdt, kier)
-#endif
-      
-c     perform viscous preconditioning, if required
-#ifdef VISCHYPRE
-c        set non-dimensionalization parameters to 1.D0
-      Re = 1.D0
-      Pr = 1.D0
-      Lu = 1.D0
-
-c        call viscous preconditioning setup routines
-      call fvprecdusetup(uu, gamdt, mu, Re, v1, v2, ier)
-      if (ier /= 0) then
-         kier = ier
-         write(0,*) '    fvprecdusetup error =', ier
-         return
-      endif
-
-      call fvprecdbsetup(uu, gamdt, Lu, eta, v1, v2, ier)
-      if (ier /= 0) then
-         kier = ier
-         write(0,*) '    fvprecdbsetup error =', ier
-         return
-      endif
-      
-      call fvprecdesetup(uu, gamdt, gamma, kappa, Re, Pr, rgas, 
-     &     v1, v2, ier)
-      if (ier /= 0) then
-         kier = ier
-         write(0,*) '    fvprecdesetup error =', ier
-         return
-      endif
-#endif         
+c     set up preconditioners
+      call combo_prec_setup(uu, fu, gamdt, v1, v2, kier)
 
 c     stop the preconditioner setup profiler
       call prof_stop(4)
@@ -1056,18 +894,8 @@ c     set delta to the desired viscous preconditioner tolerance
       call fnvmhdmaxnorm(fu,fnorm)
       delta = 1.0d-4*fnorm
 
-#ifdef FASTWAVE
-c     call fast wave preconditioning solve routine
-      call fastwave_psol(uu, fu, gamdt, zz, vt, kier)
-#elif BLKTRIDIAG
-c     call block tridiagonal preconditioning solve routine
-      call blk_tridiag_psol(gamdt, zz, vt, kier)
-#endif
-
-#ifdef VISCHYPRE
-c     call viscous preconditioning solver routine
-      call vprec_solver(uu, gamdt, delta, zz, vt, kier)
-#endif
+c     call preconditioner solvers
+      call combo_prec_solve(uu, fu, gamdt, delta, zz, vt, kier)
 
 c     stop the preconditioner solve profiler
       call prof_stop(5)
