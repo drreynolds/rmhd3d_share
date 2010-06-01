@@ -1,0 +1,40 @@
+&cvode_controls
+  tstop       = 1.0d2,
+  dtfac       = 1.0d0,
+  dtinit      = 0.0d0,
+  maxdt       = 0.0d0,
+  mindt       = 0.0d0,
+
+  useMyPrec   = 0,
+  freezePrec  = 0,
+  prectype    = 0,
+
+  lsolver     = 0,
+  maxl        = 7,
+  gstype      = 1,
+  useMyJv     = 0,
+  lintol      = 5.0d-1,
+
+  mxnewtit    = 5,
+  nonlincoeff = 1.0d-1,
+  itermethod  = 2,
+
+  intmethod   = 2,
+  taskchoice  = 1,
+  mxbdf       = 5,
+  mxsteps     = 5000,
+  mxwarn      = 0,
+  stlimit     = 0,
+  mxerrfails  = 0,
+  mxconvfails = 0,
+
+  rtol        = 1.0d-7,
+
+  atol1       = 1.0d-13,
+  atol2       = 1.0d-16,
+  atol3       = 1.0d-16,
+  atol4       = 1.0d-13,
+  atol5       = 1.0d-14,
+  atol6       = 1.0d-14,
+  atol7       = 1.0d-12,
+  atol8       = 1.0d-11 /

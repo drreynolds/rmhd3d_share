@@ -1,0 +1,18 @@
+&inparams
+maxiter = 10,
+new = 1 ,
+output_flag=1 ,
+binary_flag=0 ,
+&end
+&dumps
+ ndump=1,
+ ndiag=1,
+&end
+&gridbounds
+ xl=0.D0,
+ xr=2.0D0,
+ yl=-1.D0,
+ yr=1.0D0,
+ zl=-1.0D0,
+ zr=1.0D0,
+&end

@@ -1,0 +1,48 @@
+###################################################################
+#  machine-specific Makefile for unigrid resistive MHD code
+#  Daniel R. Reynolds, UCSD Mathematics
+###################################################################
+
+
+# Fortran 90/95 compiler
+F90 = g95
+
+# Fortran compile flags
+#FFLAGS = -p -O0 -ffixed-form -fbackslash -fno-second-underscore
+FFLAGS = -O2 -ffixed-form -fbackslash -fno-second-underscore
+
+# Fortran 77 compiler
+F77 = g95
+
+#F77FLAGS = -p -O0 -ffixed-form -fno-second-underscore
+F77FLAGS = -O2 -ffixed-form -fno-second-underscore
+
+# C compiler
+CC = gcc-4
+
+# C compile flags
+#CFLAGS = -p -g -O0 -Wall
+CFLAGS = -O2
+
+# SUNDIALS-specific preprocessor directives (F-to-C conversion)
+SUND_DEFS = -DSUNDIALS_CASE_LOWER #-DSUNDIALS_UNDERSCORE_TWO
+
+# Location of C standard header files (stdlib.h, etc.)
+C_INCD = -I/usr/include
+
+# SUNDIALS installation location
+#SUNDROOT = /usr/local/sundials
+SUNDROOT = /usr/local/sundials-2.3.0
+
+# HYPRE installation location
+HYPREROOT = /usr/local/hypre-1.14.0b
+#HYPREROOT = /usr/local/hypre-2.0.0
+
+# MPI installation location (F90 compatible), and required libs
+MPIROOT  = /usr/local/mpich-1.2.6/gnu_
+MPI_LIBS = -lmpich -lmpichf90 -lpmpich
+MPI_INCD = -I${MPIROOT}/include -I${MPIROOT}/include/f90base
+MPI_LIBD = -L${MPIROOT}/lib
+
+
+####### End of Makefile #######

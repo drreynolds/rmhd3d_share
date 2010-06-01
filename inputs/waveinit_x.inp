@@ -1,0 +1,8 @@
+ &waveinit
+  pdir=7,
+  alpha=-44.5d0,
+  waveNumber=1,
+  kratio=0,
+  pertAmplitude=1.0d-5,
+ &end
+

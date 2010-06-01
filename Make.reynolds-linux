@@ -1,0 +1,55 @@
+###################################################################
+#  machine-specific Makefile for unigrid resistive MHD code
+#  Daniel R. Reynolds, UCSD Mathematics
+###################################################################
+
+
+# Fortran 90/95 compiler
+#F90 = g95-0.50
+F90 = ifort
+
+# Fortran compile flags
+#FFLAGS = -p -g -O0 -ffixed-form -fbackslash # gnu debug
+#FFLAGS = -O2 -ffixed-form -fbackslash # gnu perf.
+#FFLAGS = -p -g -O0 -FI -assume bscc # intel debug
+FFLAGS = -O2 -FI -assume bscc # intel perf.
+
+# Fortran 77 compiler
+#F77 = g95-0.50
+F77 = ifort
+
+#F77FLAGS = -p -g -O0 -ffixed-form  # gnu debug
+#F77FLAGS = -O2 -ffixed-form  # gnu perf.
+#F77FLAGS = -p -g -O0 -FI  # intel debug
+F77FLAGS = -O2 -FI  # intel perf.
+
+# SUNDIALS-specific preprocessor directives (F-to-C conversion)
+SUND_DEFS = -DSUNDIALS_CASE_LOWER
+
+# C compiler
+CC = gcc-4.0.0
+
+# C compile flags
+#CFLAGS = -p -O0 -Wall # debug
+CFLAGS = -O2 # perf.
+
+# Location of C standard header files (stdlib.h, etc.)
+C_INCD = -I$(HOME)/apps/include
+
+# SUNDIALS installation location
+#SUNDROOT = $(HOME)/apps/sundials
+SUNDROOT = $(HOME)/apps/sundials-2.3.0
+
+# HYPRE installation location
+HYPREROOT = $(HOME)/apps/hypre-1.14.0b/intel
+#HYPREROOT = $(HOME)/apps/hypre-2.0.0
+
+# MPI installation location (F90 compatible), and required libs
+#MPIROOT  = $(HOME)/apps/mpich_gnu
+MPIROOT  = $(HOME)/apps/mpich_intel
+MPI_LIBS = -lmpich -lmpichf90
+MPI_INCD = -I${MPIROOT}/include -I${MPIROOT}/include/f90base
+MPI_LIBD = -L${MPIROOT}/lib
+
+
+####### End of Makefile #######

@@ -1,0 +1,56 @@
+&kinsol_controls
+  tstop       = 1.0d3,
+  dtfac       = 1.0d0,
+  theta       = 0.55d0,
+
+  useMyPrec   = 0,
+  freezePrec  = 0,
+  initpcond   = 0,
+  msbpre      = 0,
+
+  lsolver     = 0,
+  maxl        = 50,
+  maxlrst     = 0,
+  useMyJac    = 0,
+
+  globalstrat = 0,
+  inchoice    = 3,
+  etaconst    = 1.0d-2,
+  etagamma    = 9.0d-1,
+  etaalpha    = 2.0d0,
+
+  fnormtol    = 1.0d-7,
+  scsteptol   = 1.0d-9,
+  suppmintol  = 1,
+  mxnewtit    = 20,
+  mxnewtstep  = 0.0d0,
+  frelerr     = 0.0d0,
+
+  kinprint    = 1,
+
+  u1sc        = 1.0d0,
+  u2sc        = 1.0d0,
+  u3sc        = 1.0d0,
+  u4sc        = 1.0d0,
+  u5sc        = 1.0d0,
+  u6sc        = 1.0d0,
+  u7sc        = 1.0d0,
+  u8sc        = 1.0d0,
+
+  f1sc        = 1.0d0,
+  f2sc        = 1.0d0,
+  f3sc        = 1.0d0,
+  f4sc        = 1.0d0,
+  f5sc        = 1.0d0,
+  f6sc        = 1.0d0,
+  f7sc        = 1.0d0,
+  f8sc        = 1.0d0,
+
+  u1con       = 2.0d0,
+  u2con       = 0.0d0,
+  u3con       = 0.0d0,
+  u4con       = 0.0d0,
+  u5con       = 0.0d0,
+  u6con       = 0.0d0,
+  u7con       = 0.0d0,
+  u8con       = 2.0d0 /

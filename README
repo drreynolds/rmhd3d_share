@@ -1,0 +1,49 @@
+Building and Running RMHD2D:
+
+1. Edit one of the machine-dependent Makefiles,
+   e.g. Make.reynolds-linux, to set up the various compilers, compiler
+   flags, libraries, and Fortran-to-C translation directives.
+
+2. Link this machine-dependent Makefile to Make.machine: e.g.
+   ln -s Make.reynolds-linux Make.machine
+
+3. To set the problem size and parallelism topology, do either of the
+   following two steps:
+
+   3a. Edit the file include/make_uparms_static.h to set the problem
+       size (nx, ny and nz give the total problem dimensions) along
+       with the parallelism topology information (xprocs, yprocs and
+       zprocs give the number of processors in each cartesian
+       dimension). 
+
+   3b. Edit Make.config to ensure that -DDYNAMIC is set.  Then copy 
+       the input parameter file ./inputs/mesh.inp to the
+       runtime-directory.  Edit this file with the same information as
+       in 4a.  
+       NOTE: this option allows runs of differing dimension without
+       re-compiling the executable.
+
+4. Edit one of the problem configuration makefiles,
+   e.g. Make.config-KH, to set up the appropriate dimensionality (2D
+   vs 2.5D), boundary conditions, flux discretization choices,
+   parallelism, and preconditioning for the type of problem that you
+   wish to run.
+
+5. Link this problem-dependent Makefile to Make.config: e.g.
+   ln -s Make.config-KH Make.config
+
+6. Type 'make <target>', where <target> specifies the type of executable
+   (problem type and time integration algorithm) that you wish to
+   build.  Typing 'make' alone will bring up a list of possible
+   targets.
+
+7. Copy problem-specific input files to the run-time directory from
+   the ./inputs directory.  You will need the files mhd.inp and
+   prop.inp for all problems (remove the problem specifier suffix from
+   the file name).  For some problems, you will also need the
+   problem-specific input parameter files provided in this directory,
+   e.g. the Kelvin-Helmholtz problem requires kh_init.inp.  If the
+   time-integration algorithm is KINSOL, you will also need
+   kincontrol.inp; if it is CVODE, you will need cvcontrol.inp.
+
+8. Edit the input files to your tastes and run your executable.

@@ -1,0 +1,75 @@
+###################################################################
+#  Problem configuration Makefile
+#  Daniel R. Reynolds, UCSD Mathematics
+###################################################################
+
+####### Compile-time problem definitions #######
+# Spatial Dimension:   
+#      1D: -DONE_D
+#      2D: -DTWO_D
+#    2.5D: -DTWO_D -DTWO_HALF_D
+#      3D:  <nothing>
+DIMENSION = 
+
+# Boundary Conditions: -DXPERIODIC, -DXREFLECT, -DY*, -DZ*
+#     default is zero-gradient in each direction, and 
+#     periodic BCs have precedence over reflecting.
+#BOUNDARY_CONDS = -DXREFLECT -DYREFLECT -DZPERIODIC  # static test
+#BOUNDARY_CONDS = -DXPERIODIC -DYPERIODIC -DZPERIODIC  # linear waves
+BOUNDARY_CONDS = -DXPERIODIC -DZPERIODIC  # Kelvin-Helmholtz
+
+# CD vs. upwind:         -DUPWIND     (default is CD)
+# order of CD:  -DTCD (Tuned CD), -DCD4 (4th-order)  
+#            (default is 2nd-order, with TCD preferred over CD4)
+#            (TCD and CD4 need at least 2 ghost cells)
+#            (one of these CD methods is still used for the B field)
+# Zip-differencing:      -DZIP        (default is off)
+# Upwind formulation:    -DPRIMITIVE  (use inviscidfluxrp)
+#	                 -DROE	      (use inviscidfluxroe)
+#	                 -DHYBRID     (use CD for B field, UW for others)
+#                        (default)    (use inviscidfluxlf)
+# Harten's entropy fix:  -DHARTEN     (default is off)
+#DISCRETIZATION = -DCD4
+#DISCRETIZATION = -DTCD
+DISCRETIZATION = 
+
+# parallel execution:    -DPARALLEL   (default is serial)
+# dynamic meshing:       -DDYNAMIC    (default is static)
+# platform (for timing): -DINTEL -DCRAY -DSGI -DPC  (no default)
+# DivB cleaning:         -DDIVBCLEAN  (default is off)
+#     NOTE: DivB cleaning currently does not work, since we 
+#     updated the InviscidFlux interfaces to all be identical
+# Viscous fluxes:        -DNOVISCFLUX (default is on)
+#
+# NOTE: if the architecture that the application will be running 
+# on defines the C long int as having 64 bits, then the flag 
+# -DLONGINT8 must be set in order to guarantee accuracy in the 
+# F90-C interface for the implicit solver.
+EXTRADEFS = -DPARALLEL
+#EXTRADEFS = -DPARALLEL -DNOVISCFLUX
+#EXTRADEFS = -DPARALLEL -DNOVISCFLUX -DDYNAMIC
+#EXTRADEFS = -DPARALLEL -DDYNAMIC
+
+# preconditioning:  -DFASTWAVE, -DBLKTRIDIAG, -DVISCHYPRE
+#     default is to use no preconditioning.  
+#     FASTWAVE implies the use of fastwave_prec preconditioning
+#     BLKTRIDIAG implies the use of block tridiagonal precond.
+#     VISCHYPRE implies the use of system MG withing HYPRE for only
+# 	 preconditioning of the viscous terms.
+#PRECOND = 
+#PRECOND = -DBLKTRIDIAG
+#PRECOND = -DFASTWAVE -DVISCHYPRE
+PRECOND = -DFASTWAVE
+#PRECOND = -DVISCHYPRE
+
+
+# HYPRE-specific preprocessor directives
+# Note: if we're NOT using -DPARALLEL, then we must use -DHYPRE_SEQUENTIAL
+#HYPRE_DEFS = -DHYPRE_SEQUENTIAL
+HYPRE_DEFS =
+
+# overall problem-specific preprocessor directives
+PROB_DEFS = $(DIMENSION) $(BOUNDARY_CONDS) $(DISCRETIZATION) \
+            $(EXTRADEFS) $(PRECOND) $(HYPRE_DEFS)
+
+####### End of Make.config #######

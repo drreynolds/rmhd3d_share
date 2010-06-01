@@ -1,0 +1,11 @@
+ &meshsize
+  nx = 16,
+  ny = 16,
+  nz = 16,
+  nghost = 4,
+ &end
+ &meshprocs
+  xprocs = 1,
+  yprocs = 1,
+  zprocs = 1,
+ &end
