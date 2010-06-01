@@ -33,11 +33,6 @@ DISCRETIZATION =
 #     NOTE: DivB cleaning currently does not work, since we 
 #     updated the InviscidFlux interfaces to all be identical
 # Viscous fluxes:        -DNOVISCFLUX (default is on)
-#
-# NOTE: if the architecture that the application will be running 
-# on defines the C long int as having 64 bits, then the flag 
-# -DLONGINT8 must be set in order to guarantee accuracy in the 
-# F90-C interface for the implicit solver.
 EXTRADEFS = -DPARALLEL
 #EXTRADEFS = -DPARALLEL -DNOVISCFLUX
 #EXTRADEFS = -DPARALLEL -DNOVISCFLUX -DDYNAMIC
