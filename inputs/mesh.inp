@@ -8,3 +8,8 @@
   yprocs = 1,
   zprocs = 1,
  &end
+ &bdryconds
+  xbc = 0,
+  ybc = 0,
+  zbc = 0,
+ &end

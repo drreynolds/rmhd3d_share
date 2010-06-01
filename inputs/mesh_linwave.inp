@@ -9,3 +9,8 @@
   yprocs = 1,
   zprocs = 1,
  &end
+ &bdryconds
+  xbc = 1,
+  ybc = 1,
+  zbc = 1,
+ &end

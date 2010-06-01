@@ -584,6 +584,7 @@ c=======Inclusions ===========
       use mesh_common
       use mpistuff
       use fastwaveprec_data
+      use boundary_conds
 
 c=======Declarations =========
       implicit none
@@ -633,20 +634,16 @@ c        to this characteristic variable and spatial strip
          endif
 
 c        undo couplings for boundary, non-periodic case
-c$$$#ifndef XPERIODIC
-c$$$         if (iprocx == 1)       L(1) = 0.d0
-c$$$         if (iprocx == xprocs)  U(nxlocal) = 0.d0
-c$$$#endif
-#ifndef XPERIODIC
-         if (iprocx == 1) then
-            L(1) = 0.d0
-            U(1) = 0.d0
+         if (xbc /= BCperiodic) then
+            if (iprocx == 1) then
+               L(1) = 0.d0
+               U(1) = 0.d0
+            endif
+            if (iprocx == xprocs) then
+               L(nxlocal) = 0.d0
+               U(nxlocal) = 0.d0
+            endif
          endif
-         if (iprocx == xprocs) then
-            L(nxlocal) = 0.d0
-            U(nxlocal) = 0.d0
-         endif
-#endif
 
       else if (idir == 2) then
 
@@ -676,20 +673,16 @@ c        to this characteristic variable and spatial strip
          endif
       
 c        undo couplings for boundary, non-periodic case
-c$$$#ifndef YPERIODIC
-c$$$         if (iprocy == 1)       L(1) = 0.d0
-c$$$         if (iprocy == yprocs)  U(nylocal) = 0.d0
-c$$$#endif
-#ifndef YPERIODIC
-         if (iprocy == 1) then
-            L(1) = 0.d0
-            U(1) = 0.d0
+         if (ybc /= BCperiodic) then
+            if (iprocy == 1) then
+               L(1) = 0.d0
+               U(1) = 0.d0
+            endif
+            if (iprocy == yprocs) then
+               L(nylocal) = 0.d0
+               U(nylocal) = 0.d0
+            endif
          endif
-         if (iprocy == yprocs) then
-            L(nylocal) = 0.d0
-            U(nylocal) = 0.d0
-         endif
-#endif
 #endif
 
       else
@@ -721,20 +714,16 @@ c        to this characteristic variable and spatial strip
          endif
 
 c        undo couplings for boundary, non-periodic case
-c$$$#ifndef ZPERIODIC
-c$$$         if (iprocz == 1)       L(1) = 0.d0
-c$$$         if (iprocz == zprocs)  U(nzlocal) = 0.d0
-c$$$#endif
-#ifndef ZPERIODIC
-         if (iprocz == 1) then
-            L(1) = 0.d0
-            U(1) = 0.d0
+         if (zbc /= BCperiodic) then
+            if (iprocz == 1) then
+               L(1) = 0.d0
+               U(1) = 0.d0
+            endif
+            if (iprocz == zprocs) then
+               L(nzlocal) = 0.d0
+               U(nzlocal) = 0.d0
+            endif
          endif
-         if (iprocz == zprocs) then
-            L(nzlocal) = 0.d0
-            U(nzlocal) = 0.d0
-         endif
-#endif
 #endif
 #endif
 

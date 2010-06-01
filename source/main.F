@@ -39,7 +39,7 @@ c======= Declarations =========
       integer :: ipznum
       integer :: ipx, ipy, ipz
       integer :: myid
-      integer :: meshbuffer(7)
+      integer :: meshbuffer(10)
 
 c     safety checks
       integer :: ndims
@@ -47,10 +47,11 @@ c     safety checks
       integer :: NProcAxis(3)
 
 c     namelists
+      namelist /bdryconds/ xbc, ybc, zbc
 #ifdef DYNAMIC
       namelist /meshsize/  nx, ny, nz, nghost
       namelist /meshprocs/ xprocs, yprocs, zprocs
-#endif
+      namelist /bdryconds/ xbc, ybc, zbc
 
 c======= Internals ============
 
@@ -67,6 +68,7 @@ c     if mesh is dynamic, have root processor input initial parameters
          open(imesh,file='mesh.inp',form='formatted')
          read(imesh,meshsize)
          read(imesh,meshprocs)
+         read(imesh,bdryconds)
          close(imesh)
       endif
 
@@ -79,7 +81,10 @@ c     have root processor send out mesh information to all other procs
       meshbuffer(5) = xprocs
       meshbuffer(6) = yprocs
       meshbuffer(7) = zprocs
-      call MPI_Bcast(meshbuffer,7,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+      meshbuffer(8) = xbc
+      meshbuffer(9) = ybc
+      meshbuffer(10) = zbc
+      call MPI_Bcast(meshbuffer,10,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
       nx = meshbuffer(1)
       ny = meshbuffer(2)
       nz = meshbuffer(3)
@@ -87,6 +92,26 @@ c     have root processor send out mesh information to all other procs
       xprocs = meshbuffer(5)
       yprocs = meshbuffer(6)
       zprocs = meshbuffer(7)
+      xbc = meshbuffer(8)
+      ybc = meshbuffer(9)
+      zbc = meshbuffer(10)
+#endif      
+#else
+      if (myid == 0) then
+         open(imesh,file='mesh.inp',form='formatted')
+         read(imesh,bdryconds)
+         close(imesh)
+      endif
+
+c     have root processor send out mesh information to all other procs
+#ifdef PARALLEL
+      meshbuffer(1) = xbc
+      meshbuffer(2) = ybc
+      meshbuffer(3) = zbc
+      call MPI_Bcast(meshbuffer,3,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+      xbc = meshbuffer(1)
+      ybc = meshbuffer(2)
+      zbc = meshbuffer(3)
 #endif      
 #endif
 
@@ -106,30 +131,6 @@ c     set up initial mesh parameters
       nxlocal = nxlsize
       nylocal = nylsize
       nzlocal = nzlsize
-#endif
-
-
-c     set up boundary conditions based on preprocessor directives
-#ifdef XPERIODIC
-      xbc = BCperiodic
-#elif XREFLECT
-      xbc = BCreflecting
-#else
-      xbc = BCzerograd
-#endif
-#ifdef YPERIODIC
-      ybc = BCperiodic
-#elif YREFLECT
-      ybc = BCreflecting
-#else
-      ybc = BCzerograd
-#endif
-#ifdef ZPERIODIC
-      zbc = BCperiodic
-#elif ZREFLECT
-      zbc = BCreflecting
-#else
-      zbc = BCzerograd
 #endif
 
 
