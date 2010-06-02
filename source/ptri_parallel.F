@@ -8,7 +8,7 @@ c     This file implements a parallelized solver for ADI-like solves
 c            T1 * T2 * T3 * sol = rhs
 c     where each of the T matrices are periodic tridiagonal linear 
 c     systems of the form
-c             r(i) = L(i)*s(i-1) + D(i)*s(i) + U(i)*s(i+1).
+c             r(i) = a(i)*s(i-1) + b(i)*s(i) + c(i)*s(i+1).
 c     The implicit assumption is that each processor will own a large
 c     number of these systems, within either a 1D, 2D or 3D processor 
 c     topology.  Under this assumption, parallelization is obtained 
@@ -48,13 +48,13 @@ c          and the handle to the user-supplied right-hand-side array vec,
 c          any necessary pre-processing of the user's data to prepare for 
 c          solving idir-directional systems may be performed.
 c
-c       setup_strip(idir, j, k, iw, vec, D, U, L, r, ier) -- Given the 
+c       setup_strip(idir, j, k, iw, vec, b, c, a, r, ier) -- Given the 
 c          description of which 1D tridiagonal system to set up (j,k,iw 
 c          correspond to the 2 orthogonal spatial indices and the given 
 c          'wave' in that direction), and the user-supplied right-hand-side 
-c          array vec, this routine should return the arrays D, U, L and r 
+c          array vec, this routine should return the arrays b, c, a and r 
 c          for the tridiagonal system 
-c             r(i) = L(i)*s(i-1) + D(i)*s(i) + U(i)*s(i+1)
+c             r(i) = a(i)*s(i-1) + b(i)*s(i) + c(i)*s(i+1)
 c          on this processor.
 c
 c       pack_strip(idir, j, k, iw, vec, s, ier) -- Given the description 
@@ -75,7 +75,7 @@ c              1 -> recoverable failure
 c             -1 -> fatal failure
 c
 c-----------------------------------------------------------------------
-c     $Log: ptri_parallel.F,v $
+c     $aog: ptri_parallel.F,v $
 c=======================================================================
 
 
@@ -105,7 +105,7 @@ c     setup flag (pre-initialized)
       logical, private :: comms_set = .false.
 
 c     temporary arrays
-      real*8, dimension(:), allocatable, private :: D, U, L, r, s
+      real*8, dimension(:), allocatable, private :: b, c, a, r, s
       real*8, dimension(:), allocatable, private :: tmp1, tmp2, tmp3
 c-----------------------------------------------------------------------
 
@@ -297,7 +297,7 @@ c     get neighbor processor information
       pzr = MPI_PROC_NULL
 
 c        x-neighbors
-      if ((myid_x /= 0) .or. periods(1)) then
+      if (myid_x /= 0) then
          loc(1) = myid_x-1
          call mpi_cart_rank(x_comm, loc, pxl, mpier)
          if (mpier /= MPI_SUCCESS) then
@@ -306,7 +306,7 @@ c        x-neighbors
             return
          endif  
       end if
-      if ((myid_x /= pdims(1)-1) .or. periods(1)) then
+      if (myid_x /= pdims(1)-1) then
          loc(1) = myid_x+1
          call mpi_cart_rank(x_comm, loc, pxr, mpier)
          if (mpier /= MPI_SUCCESS) then
@@ -318,7 +318,7 @@ c        x-neighbors
 
 c        y-neighbors
       if (dims > 1) then
-         if ((myid_y /= 0) .or. periods(2)) then
+         if (myid_y /= 0) then
             loc(1) = myid_y-1
             call mpi_cart_rank(y_comm, loc, pyl, mpier)
             if (mpier /= MPI_SUCCESS) then
@@ -327,7 +327,7 @@ c        y-neighbors
                return
             endif  
          end if
-         if ((myid_y /= pdims(2)-1) .or. periods(2)) then
+         if (myid_y /= pdims(2)-1) then
             loc(1) = myid_y+1
             call mpi_cart_rank(y_comm, loc, pyr, mpier)
             if (mpier /= MPI_SUCCESS) then
@@ -340,7 +340,7 @@ c        y-neighbors
 
 c        z-neighbors
       if (dims > 2) then
-         if ((myid_z /= 0) .or. periods(3)) then
+         if (myid_z /= 0) then
             loc(1) = myid_z-1
             call mpi_cart_rank(z_comm, loc, pzl, mpier)
             if (mpier /= MPI_SUCCESS) then
@@ -349,7 +349,7 @@ c        z-neighbors
                return
             endif  
          end if
-         if ((myid_z /= pdims(3)-1) .or. periods(3)) then
+         if (myid_z /= pdims(3)-1) then
             loc(1) = myid_z+1
             call mpi_cart_rank(z_comm, loc, pzr, mpier)
             if (mpier /= MPI_SUCCESS) then
@@ -364,21 +364,21 @@ c        z-neighbors
 c     allocate temporary arrays
       len = max(nx,ny)
       len = max(len,nz)
-      allocate(D(len), stat=mpier)
+      allocate(b(len), stat=mpier)
       if (mpier /= MPI_SUCCESS) then
-         write(0,*) ' p',myid,' ptri_setup D allocation error =',mpier
+         write(0,*) ' p',myid,' ptri_setup b allocation error =',mpier
          ier = -1
          return
       endif  
-      allocate(U(len), stat=mpier)
+      allocate(c(len), stat=mpier)
       if (mpier /= MPI_SUCCESS) then
-         write(0,*) ' p',myid,' ptri_setup U allocation error =',mpier
+         write(0,*) ' p',myid,' ptri_setup c allocation error =',mpier
          ier = -1
          return
       endif  
-      allocate(L(len), stat=mpier)
+      allocate(a(len), stat=mpier)
       if (mpier /= MPI_SUCCESS) then
-         write(0,*) ' p',myid,' ptri_setup L allocation error =',mpier
+         write(0,*) ' p',myid,' ptri_setup a allocation error =',mpier
          ier = -1
          return
       endif  
@@ -431,11 +431,11 @@ c-----------------------------------------------------------------------
       integer :: ierr, ier
       
       ier = 0
-      if (allocated(D))     deallocate(D, stat=ierr)
+      if (allocated(b))     deallocate(b, stat=ierr)
       ier = ier + ierr
-      if (allocated(U))     deallocate(U, stat=ierr)
+      if (allocated(c))     deallocate(c, stat=ierr)
       ier = ier + ierr
-      if (allocated(L))     deallocate(L, stat=ierr)
+      if (allocated(a))     deallocate(a, stat=ierr)
       ier = ier + ierr
       if (allocated(r))     deallocate(r, stat=ierr)
       ier = ier + ierr
@@ -563,10 +563,10 @@ c     calling variables
       
 c     local variables
       integer :: ihi, jhi, khi, nw, i, j, k, iw, off, is, ie
-      integer :: msg_id, iprocs, myid, pl, pr
+      integer :: msg_id, myid, pl, pr
       integer :: status(MPI_STATUS_SIZE)
       real*8  :: rbuf(4), sbuf(4)
-      real*8  :: U_l, L_l, L_r, L_n, r_l, r_r, r_n, s1
+      real*8  :: c_l, a_l, a_r, a_n, r_l, r_r, r_n, s1
 
 c======= Internals ============
 
@@ -583,11 +583,6 @@ c     set solver parameters for this direction
          myid = myid_x
          pl = pxl
          pr = pxr
-         call mpi_comm_size(x_comm, iprocs, ier)
-         if (ier /= MPI_SUCCESS) then
-            write(0,*) 'ptri_solve1d: mpi_comm_size error =',ier
-            return
-         end if
          call mpi_barrier(x_comm, ier)
          if (ier /= MPI_SUCCESS) then
             write(0,*) 'ptri_solve1d: mpi_barrier error =',ier
@@ -602,11 +597,6 @@ c     set solver parameters for this direction
          myid = myid_y
          pl = pyl
          pr = pyr
-         call mpi_comm_size(y_comm, iprocs, ier)
-         if (ier /= MPI_SUCCESS) then
-            write(0,*) 'ptri_solve1d: mpi_comm_size error =',ier
-            return
-         end if
          call mpi_barrier(y_comm, ier)
          if (ier /= MPI_SUCCESS) then
             write(0,*) 'ptri_solve1d: mpi_barrier error =',ier
@@ -621,11 +611,6 @@ c     set solver parameters for this direction
          myid = myid_z
          pl = pzl
          pr = pzr
-         call mpi_comm_size(z_comm, iprocs, ier)
-         if (ier /= MPI_SUCCESS) then
-            write(0,*) 'ptri_solve1d: mpi_comm_size error =',ier
-            return
-         end if
          call mpi_barrier(z_comm, ier)
          if (ier /= MPI_SUCCESS) then
             write(0,*) 'ptri_solve1d: mpi_barrier error =',ier
@@ -648,8 +633,8 @@ c        perform initial forward phase of solver on strips
             do j=1,jhi
 
 c              call user routine to set up system on this strip for this wave
-c                      r(i) = L(i)*s(i-1) + D(i)*s(i) + U(i)*s(i+1)
-               call setup_strip(idir, j, k, iw, vec, D, U, L, r, ier)
+c                      r(i) = a(i)*s(i-1) + b(i)*s(i) + c(i)*s(i+1)
+               call setup_strip(idir, j, k, iw, vec, a, b, c, r, ier)
                if (ier /= 0) then
                   write(0,*) 'ptri_solve1d: setup_strip error =',ier
                   return
@@ -659,46 +644,46 @@ c              set unique ID for this pencil
                msg_id = k*jhi+j
 
 c                 if not the first proc, wait for input from left proc
-               if (myid /= 0) then
+               if (pl /= MPI_PROC_NULL) then
                   call mpi_recv(rbuf, 3, MPI_REAL8, pl, msg_id+myid, 
      &                          comm, status, ier)
                   if (ier /= MPI_SUCCESS) then
                      write(*,*) 'ptri_solve1d: mpi_recv error =',ier
                      return
                   endif
-                  L_l = rbuf(1)
-                  U_l = rbuf(2)
+                  a_l = rbuf(1)
+                  c_l = rbuf(2)
                   r_l = rbuf(3)
 
-c                 eliminate subdiagonal in first col, storing new last column in L
-                  D(1) = D(1)-L(1)*U_l
-                  r(1) = (r(1)-L(1)*r_l)/D(1)
-                  L(1) = -L(1)*L_l/D(1)
-                  U(1) = U(1)/D(1)
+c                 eliminate subdiagonal in first col, storing new last column in a
+                  b(1) = b(1)-a(1)*c_l
+                  r(1) = (r(1)-a(1)*r_l)/b(1)
+                  a(1) = -a(1)*a_l/b(1)
+                  c(1) = c(1)/b(1)
 
                else
 
 c                 normalize the first row
-                  L(1) = L(1)/D(1)
-                  U(1) = U(1)/D(1)
-                  r(1) = r(1)/D(1)
+                  a(1) = a(1)/b(1)
+                  c(1) = c(1)/b(1)
+                  r(1) = r(1)/b(1)
 
                endif
 
-c                 eliminate subdiagonal, storing new last column in L
+c                 eliminate subdiagonal, storing new last column in a
                ie = ihi
-               if (myid == iprocs-1)  ie = ihi-2
+               if (pr == MPI_PROC_NULL)  ie = ihi-2
                do i = 2, ie
-                  D(i) = D(i)-L(i)*U(i-1)
-                  r(i) = (r(i)-L(i)*r(i-1))/D(i)
-                  L(i) = -L(i)*L(i-1)/D(i)
-                  U(i) = U(i)/D(i)
+                  b(i) = b(i)-a(i)*c(i-1)
+                  r(i) = (r(i)-a(i)*r(i-1))/b(i)
+                  a(i) = -a(i)*a(i-1)/b(i)
+                  c(i) = c(i)/b(i)
                end do
 
-c                 send right-most D,U,r values to right neighbor
-               if (myid /= iprocs-1) then
-                  sbuf(1) = L(ihi)
-                  sbuf(2) = U(ihi)
+c                 send right-most b,c,r values to right neighbor
+               if (pr /= MPI_PROC_NULL) then
+                  sbuf(1) = a(ihi)
+                  sbuf(2) = c(ihi)
                   sbuf(3) = r(ihi)
                   call mpi_send(sbuf, 3, MPI_REAL8, pr, msg_id+pr, 
      &                          comm, ier)
@@ -710,23 +695,23 @@ c                 send right-most D,U,r values to right neighbor
                else
 
 c                 eliminate subdiagonal in last two rows
-                  D(ihi-1) = D(ihi-1) - L(ihi-1)*U(ihi-2)
-                  r(ihi-1) = (r(ihi-1) - L(ihi-1)*r(ihi-2))/D(ihi-1)
-                  L(ihi-1) = (U(ihi-1) - L(ihi-1)*L(ihi-2))/D(ihi-1)
-                  D(ihi) = D(ihi) - L(ihi-1)*L(ihi)
-                  r(ihi) = (r(ihi) - r(ihi-1)*L(ihi))/D(ihi)
-                  L(ihi) = U(ihi)/D(ihi)
+                  b(ihi-1) = b(ihi-1) - a(ihi-1)*c(ihi-2)
+                  r(ihi-1) = (r(ihi-1) - a(ihi-1)*r(ihi-2))/b(ihi-1)
+                  a(ihi-1) = (c(ihi-1) - a(ihi-1)*a(ihi-2))/b(ihi-1)
+                  b(ihi) = b(ihi) - a(ihi-1)*a(ihi)
+                  r(ihi) = (r(ihi) - r(ihi-1)*a(ihi))/b(ihi)
+                  a(ihi) = c(ihi)/b(ihi)
                   
 c                 eliminate superdiagonal in next to last row
-                  r(ihi-1) = r(ihi-1) - L(ihi-1)*r(ihi)
-                  L(ihi-1) = -L(ihi-1)*L(ihi)
+                  r(ihi-1) = r(ihi-1) - a(ihi-1)*r(ihi)
+                  a(ihi-1) = -a(ihi-1)*a(ihi)
 
                end if
 
 c              store lower and upper diagonals in tmp1, tmp2; store rhs in tmp3
                off = ((k-1)*jhi + j-1)*ihi
-               tmp1(off+1:off+ihi) = L(1:ihi)
-               tmp2(off+1:off+ihi) = U(1:ihi)
+               tmp1(off+1:off+ihi) = a(1:ihi)
+               tmp2(off+1:off+ihi) = c(1:ihi)
                tmp3(off+1:off+ihi) = r(1:ihi)
 
 c           end loop over directional strips
@@ -741,54 +726,54 @@ c        perform reverse phase of solver on strips
 
 c              unpack lower, upper diagonals, rhs
                off = ((k-1)*jhi + j-1)*ihi
-               L(1:ihi) = tmp1(off+1:off+ihi)
-               U(1:ihi) = tmp2(off+1:off+ihi)
+               a(1:ihi) = tmp1(off+1:off+ihi)
+               c(1:ihi) = tmp2(off+1:off+ihi)
                r(1:ihi) = tmp3(off+1:off+ihi)
 
 c              set unique ID for this pencil
                msg_id = (khi+k)*jhi+j
 
 c                 if not the last proc, wait for input from right proc
-               if (myid /= iprocs-1) then
+               if (pr /= MPI_PROC_NULL) then
                   call mpi_recv(rbuf, 4, MPI_REAL8, pr, 
      &                          msg_id+pr, comm, status, ier)
                   if (ier /= MPI_SUCCESS) then
                      write(*,*) 'ptri_solve1d: mpi_recv error =',ier
                      return
                   end if
-                  L_r = rbuf(1)
-                  L_n = rbuf(2)
+                  a_r = rbuf(1)
+                  a_n = rbuf(2)
                   r_r = rbuf(3)
                   r_n = rbuf(4)
                   
-c                 eliminate last 2 superdiagonals and last col, storing new 1st col in L
-                  r(ihi) = r(ihi) - U(ihi)*r_r - L(ihi)*r_n;
-                  L(ihi) = -U(ihi)*L_r - L(ihi)*L_n;
-                  r(ihi-1) = r(ihi-1) - U(ihi-1)*r(ihi) - L(ihi-1)*r_n;
-                  L(ihi-1) = -U(ihi-1)*L(ihi) - L(ihi-1)*L_n;
+c                 eliminate last 2 superdiagonals and last col, storing new 1st col in a
+                  r(ihi) = r(ihi) - c(ihi)*r_r - a(ihi)*r_n;
+                  a(ihi) = -c(ihi)*a_r - a(ihi)*a_n;
+                  r(ihi-1) = r(ihi-1) - c(ihi-1)*r(ihi) - a(ihi-1)*r_n;
+                  a(ihi-1) = -c(ihi-1)*a(ihi) - a(ihi-1)*a_n;
 
                else
 
 c                 otherwise just set these variables appropriately
-                  L_n = L(ihi)
+                  a_n = a(ihi)
                   r_n = r(ihi)
 
                end if
       
 c                 eliminate superdiagonal and last col, storing new 1st col in a
                do i = ihi-2,2,-1
-                  r(i) = r(i) - U(i)*r(i+1) - L(i)*r_n
-                  L(i) = -U(i)*L(i+1) - L(i)*L_n
+                  r(i) = r(i) - c(i)*r(i+1) - a(i)*r_n
+                  a(i) = -c(i)*a(i+1) - a(i)*a_n
                end do
-               if (myid /= 0) then
-                  r(1) = r(1) - U(1)*r(2) - L(1)*r_n
-                  L(1) = -U(1)*L(2) - L(1)*L_n
+               if (pl /= MPI_PROC_NULL) then
+                  r(1) = r(1) - c(1)*r(2) - a(1)*r_n
+                  a(1) = -c(1)*a(2) - a(1)*a_n
                endif
 
-c                 send left-most L, r values to left neighbor
-               if (myid /= 0) then
-                  sbuf(1) = L(1)
-                  sbuf(2) = L_n
+c                 send left-most a, r values to left neighbor
+               if (pl /= MPI_PROC_NULL) then
+                  sbuf(1) = a(1)
+                  sbuf(2) = a_n
                   sbuf(3) = r(1)
                   sbuf(4) = r_n
                   call mpi_send(sbuf, 4, MPI_REAL8, pl, msg_id+myid, 
@@ -800,14 +785,14 @@ c                 send left-most L, r values to left neighbor
                else
          
 c                 first proc computes s at left end of overall domain
-                  s(1) = (r(1) - U(1)*r(2) - L(1)*r_n)
-     &                 / (1.d0 - U(1)*L(2) - L(1)*L_n)
+                  s(1) = (r(1) - c(1)*r(2) - a(1)*r_n)
+     &                 / (1.d0 - c(1)*a(2) - a(1)*a_n)
 
                endif
 
 c              store lower diagonal in tmp1, sol in tmp2, rhs in tmp3
                off = ((k-1)*jhi + j-1)*ihi
-               tmp1(off+1:off+ihi) = L(1:ihi)
+               tmp1(off+1:off+ihi) = a(1:ihi)
                tmp2(off+1:off+ihi) = s(1:ihi)
                tmp3(off+1:off+ihi) = r(1:ihi)
 
@@ -823,7 +808,7 @@ c        perform final forward phase over strips
 
 c              unpack lower diagonal, sol, rhs
                off = ((k-1)*jhi + j-1)*ihi
-               L(1:ihi) = tmp1(off+1:off+ihi)
+               a(1:ihi) = tmp1(off+1:off+ihi)
                s(1:ihi) = tmp2(off+1:off+ihi)
                r(1:ihi) = tmp3(off+1:off+ihi)
 
@@ -831,20 +816,20 @@ c              set unique ID for this pencil
                msg_id = (2*khi+k)*jhi+j
 
 c                 receive s left end of overall domain
-               if (myid /= 0) then
+               if (pl /= MPI_PROC_NULL) then
                   call mpi_recv(s1, 1, MPI_REAL8, pl, msg_id+myid, 
      &                          comm, status, ier)
                   if (ier /= MPI_SUCCESS) then
                      write(*,*) 'ptri_solve1d: mpi_recv error =',ier
                      return
                   endif
-                  s(1) = r(1) - L(1)*s1
+                  s(1) = r(1) - a(1)*s1
                else
                   s1 = s(1)
                endif
 
 c                 send s at left end of overall domain
-               if (myid /= iprocs-1) then
+               if (pr /= MPI_PROC_NULL) then
                   call mpi_send(s1, 1, MPI_REAL8, pr, msg_id+pr, 
      &                          comm, ier)
                   if (ier /= MPI_SUCCESS) then
@@ -855,7 +840,7 @@ c                 send s at left end of overall domain
                
 c                 perform local forward sweep, computing solution
                do i = 2,ihi
-                  s(i) = r(i) - L(i)*s1
+                  s(i) = r(i) - a(i)*s1
                end do
 
 c              call user routine to store solution on this strip for this wave
@@ -879,6 +864,9 @@ c     call user routine to process solution for this direction
          write(0,*) 'ptri_solve1d: process_sol error =',ier
          return
       end if
+
+c     nullify comm pointer
+      nullify(comm)
 
       return
 
