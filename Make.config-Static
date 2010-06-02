@@ -19,28 +19,17 @@ DIMENSION =
 # Zip-differencing:      -DZIP        (default is off)
 # Upwind formulation:    -DPRIMITIVE  (use inviscidfluxrp)
 #	                 -DROE	      (use inviscidfluxroe)
-#	                 -DHYBRID     (use CD for B field, UW for others)
 #                        (default)    (use inviscidfluxlf)
 # Harten's entropy fix:  -DHARTEN     (default is off)
-#DISCRETIZATION = -DCD4
-#DISCRETIZATION = -DTCD
 DISCRETIZATION = 
 
 # parallel execution:    -DPARALLEL   (default is serial)
 # dynamic meshing:       -DDYNAMIC    (default is static)
-# platform (for timing): -DINTEL -DCRAY -DSGI -DPC  (no default)
-# DivB cleaning:         -DDIVBCLEAN  (default is off)
-#     NOTE: DivB cleaning currently does not work, since we 
-#     updated the InviscidFlux interfaces to all be identical
 # Viscous fluxes:        -DNOVISCFLUX (default is on)
-#EXTRADEFS = -DPARALLEL
-#EXTRADEFS = -DPARALLEL -DNOVISCFLUX
-#EXTRADEFS = -DPARALLEL -DNOVISCFLUX -DDYNAMIC
 EXTRADEFS = -DPARALLEL -DDYNAMIC
 
 # HYPRE-specific preprocessor directives
 # Note: if we're NOT using -DPARALLEL, then we must use -DHYPRE_SEQUENTIAL
-#HYPRE_DEFS = -DHYPRE_SEQUENTIAL
 HYPRE_DEFS =
 
 # overall problem-specific preprocessor directives
