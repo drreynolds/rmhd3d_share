@@ -1,12 +1,14 @@
  &khinit
-  v0=0.5d0,
-  lambda=0.01d0,
-  xperturb=1.0d-1,
-  yperturb=1.0d-1,
-  xoscill=1,
-  yoscill=1,  
-  press=0.25d0,
-  Bz=10.d0,
-  Bx=0.1d0,
+  v0       = 0.5d0,
+  press    = 0.25d0,
+  Bz       = 1.d1,
+  Bx       = 1.d-1,
+  lambda   = 1.d-2,
+  xperturb = 1.d-1,
+  yperturb = 1.d-1,
+  zperturb = 1.d-1,
+  xoscill  = 1,
+  yoscill  = 1,  
+  zoscill  = 1,  
  &end
 
