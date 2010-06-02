@@ -51,7 +51,7 @@ c     namelists
 #ifdef DYNAMIC
       namelist /meshsize/  nx, ny, nz, nghost
       namelist /meshprocs/ xprocs, yprocs, zprocs
-      namelist /bdryconds/ xbc, ybc, zbc
+#endif
 
 c======= Internals ============
 
