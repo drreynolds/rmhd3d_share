@@ -1,0 +1,215 @@
+This file describes the sets of available input parameters available
+to the code.  They are organized into three groups: general problem
+parameters, solver parameters and problem-specific parameters.
+
+
+------------------
+General parameters:
+
+[mhd.inp]
+  inparams namelist:
+  - maxiter - maximum number of internal time steps
+  - new - flag denoting a new run (1) or a restart (0)
+  - output_flag - flag denoting whether to perform ouput (1) or not (0)
+  - binary_flag - flag denoting whether output should be binary (1) or
+    ASCII (0)
+
+  dumps namelist:
+  - ndump - number of internal time steps to perform between outputs
+  - ndiag - number of internal time steps to perform between
+    diagnostics calls
+
+  gridbounds namelist:
+  - xl, xr - left and right x-domain boundaries (real-valued)
+  - yl, yr - left and right y-domain boundaries (real-valued)
+  - zl, zr - left and right z-domain boundaries (real-valued)
+
+[mesh.inp]
+  meshsize namelist: (only used with DYNAMIC directive enabled)
+  - nx - total grid size in x-direction (all procs)
+  - ny - total grid size in y-direction (all procs)
+  - nz - total grid size in z-direction (all procs)
+
+  meshprocs namelist: (only used with DYNAMIC directive enabled)
+  - xprocs - # of processors (x-direction) within 3D MPI communicator
+  - yprocs - # of processors (y-direction) within 3D MPI communicator
+  - zprocs - # of processors (z-direction) within 3D MPI communicator
+
+  bdryconds namelist:
+  - xbc, ybc, zbc - boundary condition types in each direction: 
+       0 => zero-gradient (homogeneous Neumann)
+       1 => periodic
+       2 => reflecting (homogeneous Neumann in all but normal
+            components of vector fields)
+
+[prop.inp]
+
+  molwts namelist:
+  - wmol - molecular weight
+
+  gammas namelist:
+  - gamma - ratio of specific heats in ideal gas law
+
+  diffusiveproperties namelist:
+  - mu - viscosity coefficient
+  - eta - resistivity coefficient
+  - etaFactor - unused
+  - kappa - thermal conductivity coefficient
+
+[prec.inp]
+
+ prec namelist:
+ - hprec - enable hyperbolic preconditioning
+ - vprec - enable diffusive preconditioning
+ - method - choice of how to combine hyperbolic and diffusive
+   preconditioning if both are enabled:
+      1 => standard operator-split form, hyperbolic then diffusive (default)
+      2 => standard operator-split form, diffusive then hyperbolic 
+      3 => predictor-corrector form, hyperbolic then diffusive
+      4 => predictor-corrector form, diffusive then hyperbolic 
+
+ fwprec namelist:
+ - NWaves - number of waves to precondition (8 is the max & default)
+ - ADIcorrection - whether to use ADI correction (1) or not (0) (0
+   seems best and is the default) 
+ - ordering - derivation of ADI correction to use (0 is best & default)
+
+
+------------------
+Solver parameters:
+
+[kincontrol.inp]
+
+ kinsol_controls namelist:
+ - tstop - final physical simulation time
+ - dtfac - fixed time step size to use in simulation
+ - theta - time-discretization parameter 
+      0 => explicit Euler
+      1 => implicit Euler
+      0.5 => trapezoidal
+ - useMyPrec - flag denoting whether to enable (1) or disable (0)
+   preconditioning
+ - freezePrec - flag denoting whether to update preconditioner (0) or
+   freeze it to the initial condition (1)
+ - initpcond - flag to allow (1) or suppress (0) the initial
+   preconditioner setup call 
+ - msbpre - number of Newton iterations to perform between
+   preconditioner setup calls (if lagged due to cost)
+ - lsolver - linear solver to use
+      1 => GMRES (default)
+      2 => BiCGStab
+      3 => TFQMR
+ - maxl - maximum size of the Krylov subspace
+ - maxlrst - maximum number of restarts (GMRES only)
+ - useMyJac - flag to use custom Jacobian times vector routine (1) or
+   to approximate using finite-differences (0).  1 does not currently work.
+ - globalstrat - Inexact Newton globalization strategy:
+      0 => inexact Newton
+      1 => linesearch
+ - inchoice - choice for inexact Newton forcing term
+      1 => eta = abs(||f{k+1}||-||fk+Jk*p||/||fk||)
+      2 => eta = etagam*(||f_{k+1}||/||fk||)^etaalph
+      3 => eta = etaconst
+ - etaconst, etagamma, etaalpha - constants in the above formulas
+ - fnormtol - Newton scaled residual tolerance
+ - scsteptol - Newton scaled step-size tolerance
+ - suppmintol - flag to suppress (1) or allow (0) the minimum
+   step-size tolerance
+ - mxnewtit - maximum number of Newton iterations
+ - mxnewtstep - maximum Newton solver step size
+ - frelerr - assumed relative error in computation of the residual
+ - kinprint - flag denoting output verbosity of KINSOL solver
+      0 => none, 
+      1 => newt iters, ||resid||, # f calls
+      2 => 1 + globalstrat statistics
+      3 => 2 + Krylov iteration stats
+ - u1sc-u8sc - scaling values for each species of the solution, in the
+   order (rho, rho*ux, rho*uy, rho*uz, Bx, By, Bz, e)
+ - f1sc-f8sc - scaling values for each species of the residual
+ - u1con-u8con - constraint values for each species of solution
+      0 => no constraints
+      1 => value must be >= 0
+     -1 => value must be <= 0
+      2 => value must be >  0
+     -2 => value must be <  0
+
+[cvcontrol.inp]
+
+ cvode_controls namelist:
+ - tstop - final physical simulation time
+ - dtfac - fixed time step size to use in simulation
+ - dtinit -
+ - maxdt -
+ - mindt -
+ - useMyPrec - flag denoting whether to enable (1) or disable (0)
+   preconditioning
+ - freezePrec - flag denoting whether to update preconditioner (0) or
+   freeze it to the initial condition (1)
+ - prectype -
+ - lsolver - linear solver to use
+      1 => GMRES (default)
+      2 => BiCGStab
+      3 => TFQMR
+ - maxl - maximum size of the Krylov subspace
+ - gstype - Gram-Schmidt orthogonalization method (GMRES only)
+      1 => modified GS
+      2 => classical GS
+ - useMyJv - flag to use custom Jacobian times vector routine (1) or
+   to approximate using finite-differences (0).  1 does not currently work.
+ - lintol - ratio between lin and nonlin tols (default=0.05)
+ - mxnewtit - max nonlin solver iters per step (default=3)
+ - nonlincoeff - coeff in nonlin conv test (default=0.1)
+ - itermethod - nonlinear iteration method
+      1 => functional iteration
+      2 => Newton
+ - intmethod - integration method 
+      1 => Adams (nonstiff)
+      2 => BDF (stiff)
+ - taskchoice - CVODE task indicator
+      1 => normal mode (overshoot & interpolate)
+      2 => return after each internal step taken
+      3 => like 1, but must stop at tstop
+      4 => like 2, but must stop at tstop
+      NOTE: modes 3 and 4 imply that tstop/=0
+ - mxbdf - maximum order of BDF method (1-5, default=5)
+ - mxsteps - max internal time steps to reach solution (default=500)
+ - mxwarn - max warnings for tn + h = tn (default=10)
+ - stlimit - use stability limit detection (0=>off, 1=>on)
+ - mxerrfails - max error test fails per step (default=7)
+ - mxconvfails - max convergence fails per step (default=10)
+ - rtol - relative tolerance for nonlinear time step, should be on the
+   order of spatial accuracy 
+ - atol1-atol8 - absolute tolerances for each variable, on the order
+   of the noise in each variable, in the order 
+   (rho, rho*ux, rho*uy, rho*uz, Bx, By, Bz, e)
+
+
+------------------
+Problem-specific parameters:
+
+[kh_init.inp]
+
+ khinit namelist:
+ - v0 - average strength of x-directional momentum field
+ - lambda - steepening factor in initial momentum field
+ - xperturb - momentum perturbation factor in x-direction
+ - yperturb - momentum perturbation factor in x-direction
+ - zperturb - momentum perturbation factor in z-direction
+ - xoscill - oscillation factor in x-directional perturbation
+ - yoscill - oscillation factor in y-directional perturbation
+ - zoscill - oscillation factor in z-directional perturbation
+ - press - initial pressure (constant)
+ - Bx - initial x-directional magnetic field (constant)
+ - Bz - initial z-directional magnetic field (constant)
+
+[waveinit.inp]
+
+ waveinit namelist:
+ - pdir - (unsure)
+ - alpha - angle between magnetic field and x-direction
+ - waveNumber - (unsure)
+ - kratio - (unsure)
+ - pertAmplitude - magnitude of perturbation from background
+
+
+------------------
