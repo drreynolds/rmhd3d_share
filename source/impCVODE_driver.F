@@ -43,7 +43,7 @@ c     local driver variables
       double precision :: ux(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar)
       double precision :: phi(ixlo:ixhi,iylo:iyhi,izlo:izhi)
 #endif
-      double precision :: ttot, told, dt, tdesired
+      double precision :: ttot, told, dt, dtexp, tdesired
       integer          :: istart, maxiter, lastiter
       integer          :: output_flag, binary_flag
       integer          :: ndump, ndiag, new
@@ -199,12 +199,13 @@ c     Start time stepping
       do timeStep = istart,maxiter
 
 c        set next desired output time
-         call newdt(dt,ux)
+         call newdt(dtexp,ux)
          told = ttot
-         tdesired = dmin1(ttot + dtfac*dt, tstop)
+         dt = min(dtfac, tstop-ttot)
+         tdesired = ttot + dt
          if(outnode) then
-            write(6,*) 'Explicit time step =', dt
-            write(6,*) 'Desired time step  =', tdesired-told, dtfac*dt
+            write(6,*) 'Explicit time step =', dtexp
+            write(6,*) 'Desired, actual time steps =', dtfac, dt
          endif
 
 c        call CVODE to solve for new time step
@@ -229,7 +230,7 @@ c        ndump steps; output BDF, dt info on other steps.
                   if (binary_flag == 0) then
 c                     call WriteTextFileParallel(ux,timeStep)
                      call WriteGnuplotFile(ux,timeStep)
-                     call WriteAVSFile(ux,timeStep)
+c                     call WriteAVSFile(ux,timeStep)
                   else
                      call WriteBinaryFileParallel(ux,timeStep)
                   endif
