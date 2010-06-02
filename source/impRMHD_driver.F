@@ -215,7 +215,6 @@ c     Start time stepping
 c        get timestep size as a scaled explicit time step
          call newdt(dtexp,ux)
          dt = min(dtfac, tstop-ttot)
-c$$$         dt = min(dtfac*dtexp, tstop-ttot)
          if(outnode) then
             write(6,*) 'Explicit time step =',dtexp
             write(6,*) 'Desired time step  =',dt
@@ -293,7 +292,7 @@ c        update time, periodically dump data
                if(binary_flag==0) then
 c                  call WriteTextFileParallel(ux,timeStep)
                   call WriteGnuplotFile(ux,timeStep)
-                  call WriteAVSFile(ux,timeStep)
+c                  call WriteAVSFile(ux,timeStep)
                else
                   call WriteBinaryFileParallel(ux,timeStep)
                endif
