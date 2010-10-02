@@ -6,7 +6,7 @@
   useMyPrec   = 1,
   freezePrec  = 1,
   initpcond   = 0,
-  msbpre      = 0,
+  msbpre      = 1,
 
   lsolver     = 0,
   maxl        = 50,
