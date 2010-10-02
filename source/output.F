@@ -279,23 +279,17 @@ c     output variables to file
                u   = ux(i,j,k,2)/ux(i,j,k,1)
                v   = ux(i,j,k,3)/ux(i,j,k,1)
                w   = ux(i,j,k,4)/ux(i,j,k,1)
-c               u   = ux(i,j,k,2)
-c               v   = ux(i,j,k,3)
-c               w   = ux(i,j,k,4)
                bi  = ux(i,j,k,5)
                bj  = ux(i,j,k,6)
                bk  = ux(i,j,k,7)
-c               press = ux(i,j,k,8)
                press = (gamma-1.0D0)*(ux(i,j,k,8)
      &              -0.5D0*rho*(u*u+v*v+w*w)-0.5D0*(bi*bi+bj*bj+bk*bk))
-               write(itecoutput,2000) xc(i), yc(j),
+               write(itecoutput,2000) xc(i), yc(j), zc(k),
      &              rho, u,v,w,bi,bj,bk,
      &              press,div(i,j,k),jcurrent(i,j,k),
      &              press+0.5D0*(bi*bi+bj*bj+bk*bk)
-c     &              press/rho**gamma
             enddo
- 2000       format(1h ,13(es21.12e3,1x))
-c 2000       format(1h ,13(es15.6e3,1x))
+ 2000       format(1h ,14(es21.12e3,1x))
             write(itecoutput,*)
          enddo
       enddo

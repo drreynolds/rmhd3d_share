@@ -181,7 +181,7 @@ c        start the diags & I/O profiler
       if (output_flag.eq.1) then
          if (binary_flag.eq.0) then
             call WriteGnuplotFile(ux,0)
-            call WriteAVSFile(ux,0)
+c$$$            call WriteAVSFile(ux,0)
          endif
       endif
 c     Root node outputs progress
@@ -264,7 +264,7 @@ c        check error flag and exit if required
                if(binary_flag==0) then
 c                  call WriteTextFileParallel(ux,timeStep)
                   call WriteGnuplotFile(ux,timeStep)
-                  call WriteAVSFile(ux,timeStep)
+c$$$                  call WriteAVSFile(ux,timeStep)
                else
                   call WriteBinaryFileParallel(ux,timeStep)
                endif
@@ -278,7 +278,7 @@ c        periodically dump data
                if(binary_flag==0) then
 c                  call WriteTextFileParallel(ux,timeStep)
                   call WriteGnuplotFile(ux,timeStep)
-                  call WriteAVSFile(ux,timeStep)
+c$$$                  call WriteAVSFile(ux,timeStep)
                else
                   call WriteBinaryFileParallel(ux,timeStep)
                endif
@@ -330,7 +330,7 @@ c     output final solution
          if(binary_flag==0) then
 c            call WriteTextFileParallel(ux,timeStep)
             call WriteGnuplotFile(ux,timeStep)
-            call WriteAVSFile(ux,timeStep)
+c$$$            call WriteAVSFile(ux,timeStep)
          else
             call WriteBinaryFileParallel(ux,timeStep)
          endif
