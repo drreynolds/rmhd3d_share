@@ -32,6 +32,8 @@ extern "C" {
 #include "HYPRE_utilities.h"
 #include "HYPRE_sstruct_ls.h"
 #include "HYPRE_sstruct_mv.h"
+#include "HYPRE_struct_ls.h"
+#include "HYPRE_struct_mv.h"
 
 /* MPI header file */
 #ifdef PARALLEL
@@ -229,7 +231,7 @@ typedef int MPI_Comm;
 
 
 
-/* Data structure for internal precondtioner data */
+/* Data structure for viscosity precondtioner data */
 typedef struct {
 
   /* Domain-specific variables */
@@ -266,7 +268,6 @@ typedef struct {
 
   /* HYPRE SStruct-specific data */
   int  mattype;                     /* HYPRE matrix type for Du solve */
-  int  wStSize;                     /* stencil size */
   HYPRE_SStructGrid    grid;        /* HYPRE grid object for Du solve */
   HYPRE_SStructStencil wxStencil;   /* wx stencil object */
   HYPRE_SStructStencil wyStencil;   /* wy stencil object */
@@ -275,6 +276,9 @@ typedef struct {
 
   /* HYPRE Solver-specific data */
   HYPRE_SStructMatrix Du;      /* Jac. for momentum vars. */
+  HYPRE_SStructVector bvec;    /* vector for rhs */
+  HYPRE_SStructVector xvec;    /* vector for sol */
+  double *matvals;             /* storage for matrix entries */
   int sol_zeroguess;           /* use zero initial guess */
   int sol_maxit;               /* max iterations */
   int sol_relch;               /* rel. change stopping criteria */
@@ -287,11 +291,13 @@ typedef struct {
   /* Extra variables for solver diagnostics */
   int DuInit;    /* flag denoting initialization of Du matrix */
   int totIters;  /* total MG iterations for Du solves */
+  double Tsetup; /* total setup time */
+  double Tsolve; /* total solve time */
 
 } *ViscPrecDuData;
 
 
-/* Data structure for internal precondtioner data */
+/* Data structure for resistivity precondtioner data */
 typedef struct {
 
   /* Domain-specific variables */
@@ -328,7 +334,6 @@ typedef struct {
 
   /* HYPRE SStruct-specific data */
   int  mattype;                     /* HYPRE matrix type for Db solve */
-  int  bStSize;                     /* bx stencil size */
   HYPRE_SStructGrid    grid;        /* HYPRE grid object for Db solve */
   HYPRE_SStructStencil bxStencil;   /* bx stencil object */
   HYPRE_SStructStencil byStencil;   /* by stencil object */
@@ -336,7 +341,9 @@ typedef struct {
   HYPRE_SStructGraph   graph;       /* HYPRE graph object for Db solve */
 
   /* HYPRE Solver-specific data */
-  HYPRE_SStructMatrix Db;       /* Jac. for mag. field vars. */
+  HYPRE_SStructMatrix Db;      /* Jac. for mag. field vars. */
+  HYPRE_SStructVector bvec;    /* vector for rhs */
+  HYPRE_SStructVector xvec;    /* vector for sol */
   int sol_zeroguess;           /* use zero initial guess */
   int sol_maxit;               /* max iterations */
   int sol_relch;               /* rel. change stopping criteria */
@@ -349,11 +356,13 @@ typedef struct {
   /* Extra variables for solver diagnostics */
   int DbInit;    /* flag denoting initialization of Db matrix */
   int totIters;  /* total MG iterations for Db solves */
+  double Tsetup; /* total setup time */
+  double Tsolve; /* total solve time */
 
 } *ViscPrecDbData;
 
 
-/* Data structure for internal precondtioner data */
+/* Data structure for heat conduction precondtioner data */
 typedef struct {
 
   /* Domain-specific variables */
@@ -390,13 +399,13 @@ typedef struct {
 
   /* HYPRE SStruct-specific data */
   int  mattype;                    /* HYPRE matrix type for De solve */
-  int  eStSize;                    /* e stencil size */
-  HYPRE_SStructGrid    grid;       /* HYPRE grid object for De solve */
-  HYPRE_SStructStencil eStencil;   /* e stencil object */
-  HYPRE_SStructGraph   graph;      /* HYPRE graph object for De solve */
+  HYPRE_StructGrid    grid;        /* HYPRE grid object for De solve */
+  HYPRE_StructStencil eStencil;    /* e stencil object */
 
   /* HYPRE Solver-specific data */
-  HYPRE_SStructMatrix De;      /* Jac. for energy */
+  HYPRE_StructMatrix De;       /* Jac. for energy */
+  HYPRE_StructVector bvec;     /* vector for rhs */
+  HYPRE_StructVector xvec;     /* vector for sol */
   int sol_zeroguess;           /* use zero initial guess */
   int sol_maxit;               /* max iterations */
   int sol_relch;               /* rel. change stopping criteria */
@@ -409,6 +418,8 @@ typedef struct {
   /* Extra variables for solver diagnostics */
   int DeInit;    /* flag denoting initialization of De matrix */
   int totIters;  /* total MG iterations for De solves */
+  double Tsetup; /* total setup time */
+  double Tsolve; /* total solve time */
 
 } *ViscPrecDeData;
 
@@ -532,7 +543,6 @@ void VISCPREC_DE_NUMITERS(int *Niters);
 void SET_SOL_DU_OPTS(int *iopt, int *ier);
 void SET_SOL_DB_OPTS(int *iopt, int *ier);
 void SET_SOL_DE_OPTS(int *iopt, int *ier);
-
 
 
 #endif

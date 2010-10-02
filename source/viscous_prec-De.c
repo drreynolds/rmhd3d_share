@@ -219,29 +219,22 @@ void *VPrecDeAlloc(long int Nx, long int Ny, long int Nz,
 
   /* HYPRE-specific information */
 
-  /*     set the matrix type: HYPRE_SSTRUCT or HYPRE_PARCSR */
-  pdata->mattype = HYPRE_SSTRUCT;
-
   /*    set the general domain information */
   pdata->totIters = 0;
+  pdata->Tsetup = 0.0;
+  pdata->Tsolve = 0.0;
 
   /*    set up the grid */
   /*       create grid object */
-  HYPRE_SStructGridCreate(pdata->comm, pdata->ndim, 1, &(pdata->grid));
+  HYPRE_StructGridCreate(pdata->comm, pdata->ndim, &(pdata->grid));
 
   /*       set my grid extents as if we have one part with multiple boxes.
 	   Have each processor describe it's own global extents */
   ilower[0] = pdata->iXL;  ilower[1] = pdata->iYL;  ilower[2] = pdata->iZL;
   iupper[0] = pdata->iXR;  iupper[1] = pdata->iYR;  iupper[2] = pdata->iZR;
-  HYPRE_SStructGridSetExtents(pdata->grid, 0, ilower, iupper);
-
-    /*       set grid variables for this part */
-  int vartypes = HYPRE_SSTRUCT_VARIABLE_CELL;
-  HYPRE_SStructGridSetVariables(pdata->grid, 0, 1, &vartypes);
+  HYPRE_StructGridSetExtents(pdata->grid, ilower, iupper);
 
   /*       set grid periodicity */
-  /*         [this currently does not work simply in the interface,  */
-  /*          so we must manually set neighbor boxes into the grid]  */
   int periodicity[3] = {0, 0, 0};
   if (XBcond == 1) {
     long int xlo_idx, xhi_idx;
@@ -261,66 +254,59 @@ void *VPrecDeAlloc(long int Nx, long int Ny, long int Nz,
     MPI_Allreduce(&(pdata->iZR), &zhi_idx, 1, MPI_LONG, MPI_MAX, pdata->comm);
     periodicity[2] = zhi_idx-zlo_idx+1;
   }
-  HYPRE_SStructGridSetPeriodic(pdata->grid, 0, periodicity);
+  HYPRE_StructGridSetPeriodic(pdata->grid, periodicity);
 
 
   /*       assemble the grid */
-  HYPRE_SStructGridAssemble(pdata->grid);
+  HYPRE_StructGridAssemble(pdata->grid);
   
-  /*    set up the stencil */
-  pdata->eStSize = 7;
 
+  /*    set up the stencil */
   /*       create e stencil */
-  HYPRE_SStructStencilCreate(pdata->ndim, pdata->eStSize, &(pdata->eStencil));
+  HYPRE_StructStencilCreate(pdata->ndim, 7, &(pdata->eStencil));
   
 
   /*       set stencil entries */
   int offset[3];
   /*         dependency to back */
   offset[0] = 0;  offset[1] = 0;  offset[2] = -1;
-  HYPRE_SStructStencilSetEntry(pdata->eStencil, 0, offset, 0);
+  HYPRE_StructStencilSetElement(pdata->eStencil, 0, offset);
   /*         dependency to bottom */
   offset[0] = 0;  offset[1] = -1;  offset[2] = 0;
-  HYPRE_SStructStencilSetEntry(pdata->eStencil, 1, offset, 0);
+  HYPRE_StructStencilSetElement(pdata->eStencil, 1, offset);
   /*         dependency to left */
   offset[0] = -1;  offset[1] = 0;  offset[2] = 0;
-  HYPRE_SStructStencilSetEntry(pdata->eStencil, 2, offset, 0);
+  HYPRE_StructStencilSetElement(pdata->eStencil, 2, offset);
   /*         dependency to self */
   offset[0] = 0;  offset[1] = 0;  offset[2] = 0;
-  HYPRE_SStructStencilSetEntry(pdata->eStencil, 3, offset, 0);
+  HYPRE_StructStencilSetElement(pdata->eStencil, 3, offset);
   /*         dependency to right */
   offset[0] = 1;  offset[1] = 0;  offset[2] = 0;
-  HYPRE_SStructStencilSetEntry(pdata->eStencil, 4, offset, 0);
+  HYPRE_StructStencilSetElement(pdata->eStencil, 4, offset);
   /*         dependency to top */
   offset[0] = 0;  offset[1] = 1;  offset[2] = 0;
-  HYPRE_SStructStencilSetEntry(pdata->eStencil, 5, offset, 0);
+  HYPRE_StructStencilSetElement(pdata->eStencil, 5, offset);
   /*         dependency to front */
   offset[0] = 0;  offset[1] = 0;  offset[2] = 1;
-  HYPRE_SStructStencilSetEntry(pdata->eStencil, 6, offset, 0);
+  HYPRE_StructStencilSetElement(pdata->eStencil, 6, offset);
  
 
-  /*    set up the graph */
-  /*       create the graph object */
-  HYPRE_SStructGraphCreate(pdata->comm, pdata->grid, &(pdata->graph));
+  /*    set up the matrix and vectors */
+  /*       create/initialize the matrix */
+  HYPRE_StructMatrixCreate(pdata->comm, pdata->grid, pdata->eStencil, &(pdata->De));
+  HYPRE_StructMatrixInitialize(pdata->De);
+
+  /*       create/initialize the vectors */
+  HYPRE_StructVectorCreate(pdata->comm, pdata->grid, &(pdata->bvec));
+  HYPRE_StructVectorCreate(pdata->comm, pdata->grid, &(pdata->xvec));
+  HYPRE_StructVectorInitialize(pdata->bvec);
+  HYPRE_StructVectorInitialize(pdata->xvec);
   
-  /*       set graph type according to solver desired */
-  HYPRE_SStructGraphSetObjectType(pdata->graph, pdata->mattype);
-  
-  /*       set stencils into graph */
-  /*          set stencil */
-  HYPRE_SStructGraphSetStencil(pdata->graph, 0, 0, pdata->eStencil);
-
-  /*       add additional non-stencil entries into graph */
-  /*       (none that I can think of) */
-
-  /*       assemble the graph */
-  HYPRE_SStructGraphAssemble(pdata->graph);
-
 
   /********************************/
   /*  continue with general setup */
 
-  /*    set De, b and x init flags to 0 at first */
+  /* set init flag to 0 at first */
   pdata->DeInit = 0;
 
   /* set Solver default options into pdata */
@@ -353,6 +339,11 @@ void VPrecDeFree(void *P_data)
     ViscPrecDeData pdata;
     pdata = (ViscPrecDeData) P_data;
 
+    /* free the HYPRE objects */ 
+    HYPRE_StructMatrixDestroy(pdata->De);
+    HYPRE_StructVectorDestroy(pdata->bvec);
+    HYPRE_StructVectorDestroy(pdata->xvec);
+
     /* finally, free the pdata structure */
     free(pdata);
   }
@@ -376,7 +367,7 @@ void VPrecDeFree(void *P_data)
  * Pr      is the plasma Prandtl number
  * RGas    is the plasma gas constant
  * v1, v2  give already allocated arrays which may be used as 
- *         temporary storage or work space
+ *         temporary storage or work space (of length Nx*Ny*Nz*8)
  * pdata   is the preconditioner data returned by VPrecAlloc.
  *
  * Return value:
@@ -394,30 +385,14 @@ int VPrecDeSetup(double *uu, double gamdt, double Gamma,
   long int ix, iy, iz, idx, Zbl, Zbl_p, Zbl_m, Ybl, Ybl_p, Ybl_m;
   int ilower[3], iupper[3], entries[7], IdLoc;
   int xLface, xRface, yLface, yRface, zLface, zRface;
-  double dxi2, dyi2, dzi2, dxsqsum, kappafact, IdVal;
+  double dxi2, dyi2, dzi2, dxsqsum, kappafact, IdVal, Tstart, Tstop;
+
+  /* start timer */
+  Tstart = MPI_Wtime();
 
   /* recast P_data as the correct structure */
   ViscPrecDeData pdata;
   pdata = (ViscPrecDeData) P_data;
-
-  /* destroy old matrix if necessary */
-  if (pdata->DeInit == 1) {
-    HYPRE_SStructMatrixDestroy(pdata->De);
-    pdata->DeInit = 0;
-  }
-    
-  /* create the matrix, and set init flag */
-  HYPRE_SStructMatrixCreate(pdata->comm, pdata->graph, &(pdata->De));
-  pdata->DeInit = 1;
-
-  /* set matrix storage type */
-  HYPRE_SStructMatrixSetObjectType(pdata->De, pdata->mattype);
-
-/*   /\* set matrix symmetry *\/ */
-/*   HYPRE_SStructMatrixSetSymmetric(pdata->De, 0, 0, 0, 1); */
-    
-  /* initialize matrix */
-  HYPRE_SStructMatrixInitialize(pdata->De);
 
   /* get grid information shortcuts */
   Nx  = pdata->Nx;
@@ -571,24 +546,31 @@ int VPrecDeSetup(double *uu, double gamdt, double Gamma,
   }
   ilower[0] = pdata->iXL;  ilower[1] = pdata->iYL;  ilower[2] = pdata->iZL;
   iupper[0] = pdata->iXR;  iupper[1] = pdata->iYR;  iupper[2] = pdata->iZR;
-  HYPRE_SStructMatrixSetBoxValues(pdata->De, 0, ilower, 
-				  iupper, 0, 7, entries, v2);
+  HYPRE_StructMatrixSetBoxValues(pdata->De, ilower, iupper, 7, entries, v2);
 
   /* add one to matrix diagonal for identity contribution */
   for (ix=0; ix<Nx*Ny*Nz; ix++)  v2[ix] = IdVal;
-  HYPRE_SStructMatrixAddToBoxValues(pdata->De, 0, ilower, 
-				    iupper, 0, 1, &IdLoc, v2);
-  
+  HYPRE_StructMatrixAddToBoxValues(pdata->De, ilower, iupper, 1, &IdLoc, v2);
   
   /* assemble matrix */
-  HYPRE_SStructMatrixAssemble(pdata->De);
+  HYPRE_StructMatrixAssemble(pdata->De);
+
+  /*       set init flag */
+  pdata->DeInit = 1;
 
 /*   /\* PRINT OUT THE MATRIX TO FILES FOR BUG-CHECKING *\/ */
 /*   if ((pdata->outproc)==1) */
 /*     {printf("      printing HYPRE De matrix to file \n");} */
-/*   char *fname = "De_precmat"; */
-/*   HYPRE_SStructMatrixPrint(fname, pdata->De, 0); */
+/*   HYPRE_StructMatrixPrint("De.mat", pdata->De, 0); */
     
+  /* stop timer, add to totals, and output to screen */ 
+  Tstop = MPI_Wtime();
+  pdata->Tsetup += Tstop - Tstart;
+  if ((pdata->outproc) == 1) {
+    printf("De cumulative setup time: %g\n",pdata->Tsetup);
+    printf("De cumulative solve time: %g\n",pdata->Tsolve);
+  }
+
   /* return success */ 
   return(0);
 }
@@ -623,14 +605,16 @@ int VPrecDeSolve(double *xx, double *bb, double *tmp, double delta, void *P_data
   pdata = (ViscPrecDeData) P_data;
 
   /* local variables */
-  int its, ilower[3], iupper[3];
+  int Sits, Pits, ilower[3], iupper[3];
   long int ix, iy, iz, idx, Nx, NGx, Ny, NGy, Nz, NGz;
   long int Vbl, Ybl, Zbl;
-  double finalresid, resid, val, bnorm;
-  HYPRE_SStructVector bvec, xvec;
-  HYPRE_SStructSolver solver;
+  double finalresid, resid, val, bnorm, Tstart, Tstop;
+  HYPRE_StructSolver solver;
+  HYPRE_StructSolver preconditioner;
   int printl = ((pdata->outproc)==1) ? pdata->sol_printl : 0;
 
+  /* start timer */
+  Tstart = MPI_Wtime();
 
   /* check that De matrix initialized */
   if (pdata->DeInit == 0) {
@@ -646,18 +630,6 @@ int VPrecDeSolve(double *xx, double *bb, double *tmp, double delta, void *P_data
   Nz  = pdata->Nz;
   NGz = pdata->NGz;
 
-  /* create the Struct vectors and set init flags to 1 */
-  HYPRE_SStructVectorCreate(pdata->comm, pdata->grid, &bvec);
-  HYPRE_SStructVectorCreate(pdata->comm, pdata->grid, &xvec);
-
-  /* set vector storage type */
-  HYPRE_SStructVectorSetObjectType(bvec, pdata->mattype);
-  HYPRE_SStructVectorSetObjectType(xvec, pdata->mattype);
-    
-  /* initialize vectors */
-  HYPRE_SStructVectorInitialize(bvec);
-  HYPRE_SStructVectorInitialize(xvec);
-  
   /* convert rhs, solution vectors to HYPRE format      */
   /*    insert rhs vector entries into HYPRE vector b   */
   /*    and sol vector entries into HYPRE vector x      */
@@ -673,52 +645,57 @@ int VPrecDeSolve(double *xx, double *bb, double *tmp, double delta, void *P_data
 	tmp[idx++] = bb[Vbl+Zbl+Ybl+ix];
     }
   }
-  HYPRE_SStructVectorSetBoxValues(bvec, 0, ilower, iupper, 0, tmp);
-  HYPRE_SStructVectorSetBoxValues(xvec, 0, ilower, iupper, 0, tmp);
-
+  HYPRE_StructVectorSetBoxValues(pdata->bvec, ilower, iupper, tmp);
+  for (idx=0; idx<Nx*Ny*Nz; idx++)  tmp[idx] = 0.0;
+  HYPRE_StructVectorSetBoxValues(pdata->xvec, ilower, iupper, tmp);
 
   /*    assemble vectors */
-  HYPRE_SStructVectorAssemble(xvec);
-  HYPRE_SStructVectorAssemble(bvec);
+  HYPRE_StructVectorAssemble(pdata->xvec);
+  HYPRE_StructVectorAssemble(pdata->bvec);
 
-  /* set up the solver [SMG] */
-  /*    create the solver */
-/*   if (printl) printf("      creating SMG solver \n"); */
-  HYPRE_SStructSysPFMGCreate(pdata->comm, &solver);
+/*   if (printl) printf("Writing out rhs to file e_rhs.vec\n"); */
+/*   HYPRE_StructVectorPrint("e_rhs.vec", pdata->bvec, 0); */
+
+  /* set up the solver [PCG/PFMG] */
+  /*    create the solver & preconditioner */
+  HYPRE_StructPCGCreate(pdata->comm, &solver);
+  HYPRE_StructPFMGCreate(pdata->comm, &preconditioner);
  
-  /*    set solver options */
-  /*    [could the first 8 of these be done in the PrecAlloc routine?] */
-/*   if (printl) printf("      setting SysPFMG options \n"); */
-  HYPRE_SStructSysPFMGSetMaxIter(solver, pdata->sol_maxit);
-  HYPRE_SStructSysPFMGSetRelChange(solver, pdata->sol_relch);
-  HYPRE_SStructSysPFMGSetNumPreRelax(solver, pdata->sol_npre);
-  HYPRE_SStructSysPFMGSetNumPostRelax(solver, pdata->sol_npost);
-  HYPRE_SStructSysPFMGSetPrintLevel(solver, pdata->sol_printl);
-  HYPRE_SStructSysPFMGSetLogging(solver, pdata->sol_log);
-  if (delta != 0.0)  HYPRE_SStructSysPFMGSetTol(solver, delta);
-  if (pdata->sol_zeroguess)
-    HYPRE_SStructSysPFMGSetZeroGuess(solver);
-
-/*   if (printl) printf("      calling SysPFMG setup \n"); */
-  HYPRE_SStructSysPFMGSetup(solver, pdata->De, bvec, xvec);
+  /*    set preconditioner & solver options */
+  HYPRE_StructPFMGSetMaxIter(preconditioner, pdata->sol_maxit/4);
+  HYPRE_StructPFMGSetNumPreRelax(preconditioner, pdata->sol_npre);
+  HYPRE_StructPFMGSetNumPostRelax(preconditioner, pdata->sol_npost);
+  HYPRE_StructPCGSetPrintLevel(solver, pdata->sol_printl);
+  HYPRE_StructPCGSetLogging(solver, pdata->sol_log);
+  HYPRE_StructPCGSetRelChange(solver, 1);
+  HYPRE_StructPCGSetMaxIter(solver, pdata->sol_maxit);
+  if (delta != 0.0)  HYPRE_StructPCGSetTol(solver, delta);
+  HYPRE_StructPCGSetPrecond(solver, 
+			    (HYPRE_PtrToStructSolverFcn) HYPRE_StructPFMGSolve,  
+			    (HYPRE_PtrToStructSolverFcn) HYPRE_StructPFMGSetup, 
+			    preconditioner);
+  HYPRE_StructPCGSetup(solver, pdata->De, pdata->bvec, pdata->xvec);
   
   /* solve the linear system */
-/*   if (printl) printf("      calling SysPFMG solver \n"); */
-  HYPRE_SStructSysPFMGSolve(solver, pdata->De, bvec, xvec);
+  HYPRE_StructPCGSolve(solver, pdata->De, pdata->bvec, pdata->xvec);
 
   /* extract solver statistics */
-/*   if (printl) printf("      extracting SysPFMG statistics \n"); */
-  HYPRE_SStructSysPFMGGetFinalRelativeResidualNorm(solver, &finalresid);
-  HYPRE_SStructSysPFMGGetNumIterations(solver, &its);
-  pdata->totIters += its;
+  finalresid = 1.0;  Sits = 0;  Pits = 0;
+  HYPRE_StructPCGGetFinalRelativeResidualNorm(solver, &finalresid);
+  HYPRE_StructPCGGetNumIterations(solver, &Sits);
+  HYPRE_StructPFMGGetNumIterations(preconditioner, &Pits);
+  pdata->totIters += Sits;
+  if (printl) printf("      De lin resid = %.1e (tol = %.1e) its = (%i,%i) \n",
+		     finalresid, delta, Sits, Pits);
 
-  /* gather the solution vector and extract values */
-/*   if (printl) printf("      extracting solution vector \n"); */
-  HYPRE_SStructVectorGather(xvec);
+/*   if (printl) printf("Writing out solution to file e_sol.vec\n"); */
+/*   HYPRE_StructVectorPrint("e_sol.vec", pdata->xvec, 0); */
+
+  /* extract values from solution vector */
   Vbl = 7 * (Nx+2*NGx) * (Ny+2*NGy) * (Nz+2*NGz);
   ilower[0] = pdata->iXL;  ilower[1] = pdata->iYL;  ilower[2] = pdata->iZL;
   iupper[0] = pdata->iXR;  iupper[1] = pdata->iYR;  iupper[2] = pdata->iZR;
-  HYPRE_SStructVectorGetBoxValues(xvec, 0, ilower, iupper, 0, tmp);
+  HYPRE_StructVectorGetBoxValues(pdata->xvec, ilower, iupper, tmp);
   idx = 0;
   for (iz=NGz; iz<Nz+NGz; iz++) {
     Zbl = iz * (Nx+2*NGx) * (Ny+2*NGy);
@@ -729,11 +706,14 @@ int VPrecDeSolve(double *xx, double *bb, double *tmp, double delta, void *P_data
     }
   }
 
-  /* destroy vector and solver structures */
-  HYPRE_SStructSysPFMGDestroy(solver);
-  HYPRE_SStructVectorDestroy(bvec);
-  HYPRE_SStructVectorDestroy(xvec);
+  /* destroy solver and preconditioner structures */
+  HYPRE_StructPCGDestroy(solver);
+  HYPRE_StructPFMGDestroy(preconditioner);
       
+  /* stop timer, add to totals, and output to screen */ 
+  Tstop = MPI_Wtime();
+  pdata->Tsolve += Tstop - Tstart;
+
   /* return success.  */
   return(0);
 }
@@ -769,7 +749,6 @@ int VPrecDeMultiply(double *xx, double *bb, double *tmp, void *P_data)
   int ilower[3], iupper[3];
   long int ix, iy, iz, idx, Nx, NGx, Ny, NGy, Nz, NGz;
   long int Vbl, Ybl, Zbl;
-  HYPRE_SStructVector bvec, xvec;
   double val;
 
   /* check that De matrix initialized */
@@ -786,18 +765,6 @@ int VPrecDeMultiply(double *xx, double *bb, double *tmp, void *P_data)
   Nz  = pdata->Nz;
   NGz = pdata->NGz;
 
-  /* create the Struct vectors and set init flags to 1 */
-  HYPRE_SStructVectorCreate(pdata->comm, pdata->grid, &bvec);
-  HYPRE_SStructVectorCreate(pdata->comm, pdata->grid, &xvec);
-
-  /* set vector storage type */
-  HYPRE_SStructVectorSetObjectType(bvec, pdata->mattype);
-  HYPRE_SStructVectorSetObjectType(xvec, pdata->mattype);
-    
-  /* initialize vectors */
-  HYPRE_SStructVectorInitialize(bvec);
-  HYPRE_SStructVectorInitialize(xvec);
-  
   /* convert product, result vectors to HYPRE format        */
   /*    insert product vector entries into HYPRE vector x   */
   Vbl = 7 * (Nx+2*NGx) * (Ny+2*NGy) * (Nz+2*NGz);
@@ -812,23 +779,20 @@ int VPrecDeMultiply(double *xx, double *bb, double *tmp, void *P_data)
 	tmp[idx++] = xx[Vbl+Zbl+Ybl+ix];
     }
   }
-  HYPRE_SStructVectorSetBoxValues(xvec, 0, ilower, iupper, 0, tmp);
+  HYPRE_StructVectorSetBoxValues(pdata->xvec, ilower, iupper, tmp);
 
   /*    assemble vectors */
-  HYPRE_SStructVectorAssemble(xvec);
-  HYPRE_SStructVectorAssemble(bvec);
+  HYPRE_StructVectorAssemble(pdata->xvec);
+  HYPRE_StructVectorAssemble(pdata->bvec);
 
   /* computing the matvec */
-  hypre_SStructMatvec(1.0, pdata->De, xvec, 1.0, bvec);
-
-  /* gather the solution vector before extracting values */
-  HYPRE_SStructVectorGather(bvec);
+  HYPRE_StructMatrixMatvec(1.0, pdata->De, pdata->xvec, 1.0, pdata->bvec);
 
   /* extract product vector into bb */
   Vbl = 7 * (Nx+2*NGx) * (Ny+2*NGy) * (Nz+2*NGz);
   ilower[0] = pdata->iXL;  ilower[1] = pdata->iYL;  ilower[2] = pdata->iZL;
   iupper[0] = pdata->iXR;  iupper[1] = pdata->iYR;  iupper[2] = pdata->iZR;
-  HYPRE_SStructVectorGetBoxValues(bvec, 0, ilower, iupper, 0, tmp);
+  HYPRE_StructVectorGetBoxValues(pdata->bvec, ilower, iupper, tmp);
   idx = 0;
   for (iz=NGz; iz<Nz+NGz; iz++) {
     Zbl = iz * (Nx+2*NGx) * (Ny+2*NGy);
@@ -838,11 +802,7 @@ int VPrecDeMultiply(double *xx, double *bb, double *tmp, void *P_data)
 	bb[Vbl+Zbl+Ybl+ix] = tmp[idx++];
     }
   }
-
-  /* destroy old vectors */
-  HYPRE_SStructVectorDestroy(bvec);
-  HYPRE_SStructVectorDestroy(xvec);
-      
+  
   /* return success.  */
   return(0);
 }
