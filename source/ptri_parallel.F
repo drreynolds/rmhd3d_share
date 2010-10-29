@@ -48,7 +48,7 @@ c          and the handle to the user-supplied right-hand-side array vec,
 c          any necessary pre-processing of the user's data to prepare for 
 c          solving idir-directional systems may be performed.
 c
-c       setup_strip(idir, j, k, iw, vec, b, c, a, r, ier) -- Given the 
+c       setup_strip(idir, j, k, iw, vec, a, b, c, r, ier) -- Given the 
 c          description of which 1D tridiagonal system to set up (j,k,iw 
 c          correspond to the 2 orthogonal spatial indices and the given 
 c          'wave' in that direction), and the user-supplied right-hand-side 

@@ -93,6 +93,18 @@ OBJ11 = $(addprefix source/, $(addsuffix .o, $(SRC11))) $(OBJ_LPK)
 SRC10 = $(ALLSRC) $(VISCSRC) $(PRECSRCH) $(PRECSRCD) $(CVSRC) initKH
 OBJ10 = $(addprefix source/, $(addsuffix .o, $(SRC10))) $(OBJ_LPK)
 
+# test_psol_scaling source files and corresp. object files
+PSOL_SCALING_TEST_SRC = $(addprefix source/, $(ALLSRC)) \
+                        source/init2 source/ptri_parallel \
+                        source/fastwave_prec tests/test_psol_scaling 
+PSOL_SCALING_TEST_OBJ = $(addsuffix .o, $(PSOL_SCALING_TEST_SRC)) $(OBJ_LPK)
+
+# test_psol_accuracy source files and corresp. object files
+PSOL_ACCURACY_TEST_SRC = $(addprefix source/, $(ALLSRC)) \
+                         source/init2 source/ptri_parallel \
+                         source/ptri_product tests/test_psol_accuracy
+PSOL_ACCURACY_TEST_OBJ = $(addsuffix .o, $(PSOL_ACCURACY_TEST_SRC)) $(OBJ_LPK)
+
 # test_driver source files and corresp. object files
 TEST_DRIVER_SRC = $(ALLSRC) $(PRECSRCH) $(PRECSRCD) init2 test_driver \
                   impCVODE_interface nvector_mhd fnvector_mhd
@@ -163,6 +175,8 @@ help :
 	@echo "     cvLinWave         [CVODE, variable dt]"
 	@echo " "
 	@echo "  Code Tests:"
+	@echo "     test_psol_scaling  [tests scaling of ptri_parallel]"
+	@echo "     test_psol_accuracy [tests accuracy of ptri_parallel]"
 	@echo "     test_driver       [driver to run customized tests]"
 	@echo "     fnvec_mhd_test    [checks F90/C vector kernel interface]"
 	@echo "     hypre_test        [checks C hypre interface]"
@@ -225,6 +239,12 @@ cvKH : ${HEADERS} ${OBJ10}
 
 cvKH2 : ${HEADERS} ${OBJ10N}
 	${F90} ${FFLAGS_} -o $@ ${OBJ10N} ${INCS} ${CVLIBS} 
+
+test_psol_scaling : ${HEADERS} ${PSOL_SCALING_TEST_OBJ}
+	${F90} ${FFLAGS_} -o $@ ${PSOL_SCALING_TEST_OBJ} ${INCS}
+
+test_psol_accuracy : ${HEADERS} ${PSOL_ACCURACY_TEST_OBJ}
+	${F90} ${FFLAGS_} -o $@ ${PSOL_ACCURACY_TEST_OBJ} ${INCS}
 
 test_driver : ${HEADERS} ${TEST_DRIVER_OBJ}
 	${F90} ${FFLAGS_} -o $@ ${TEST_DRIVER_OBJ} ${INCS} ${CVLIBS} 
