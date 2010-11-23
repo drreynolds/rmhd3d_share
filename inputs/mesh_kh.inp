@@ -1,8 +1,8 @@
  &meshsize
-  nx = 16,
-  ny = 16,
-  nz = 16,
-  nghost = 4,
+  nx = 32,
+  ny = 32,
+  nz = 32,
+  nghost = 3,
  &end
  &meshprocs
   xprocs = 1,
@@ -11,6 +11,6 @@
  &end
  &bdryconds
   xbc = 1,
-  ybc = 1,
-  zbc = 0,
+  ybc = 0,
+  zbc = 1,
  &end

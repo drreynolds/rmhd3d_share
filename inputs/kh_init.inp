@@ -7,8 +7,8 @@
   xperturb = 1.d-1,
   yperturb = 1.d-1,
   zperturb = 1.d-1,
-  xoscill  = 1,
-  yoscill  = 1,  
-  zoscill  = 1,  
+  xoscill  = 2,
+  yoscill  = 2,  
+  zoscill  = 2,  
  &end
 
