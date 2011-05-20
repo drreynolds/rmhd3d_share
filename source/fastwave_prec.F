@@ -207,7 +207,7 @@ c     (sans I + gamma*(), so that we can remain valid with the 1D solves)
 
 c     construct/save the parallelism information and 1D process 
 c     communicators for this process
-      if (ptri_set == .false.) then
+      if (ptri_set .eqv. .false.) then
 
          dims = 3
 #ifdef ONE_D
