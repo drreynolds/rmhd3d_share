@@ -1,0 +1,47 @@
+###################################################################
+#  machine-specific Makefile for unigrid resistive MHD code
+#  Daniel R. Reynolds, SMU Mathematics
+###################################################################
+
+
+# Fortran 90/95 compiler
+F90 = mpif90
+
+# Fortran compile flags
+#FFLAGS = -p -g -O0 -ffixed-form -fbackslash  # gnu debug
+FFLAGS = -O2 -ffixed-form -fbackslash  # gnu perf.
+
+# Fortran 77 compiler
+F77 = $(F90)
+
+# Fortran77 compile flags
+#F77FLAGS = -p -g -O0 -ffixed-form  # gnu debug
+F77FLAGS = -O2 -ffixed-form  # gnu perf.
+
+# SUNDIALS-specific preprocessor directives (F-to-C conversion)
+SUND_DEFS = -DSUNDIALS_CASE_LOWER -DSUNDIALS_UNDERSCORE_ONE -DLONGINT8
+
+# C compiler (for SUNDIALS interface)
+CC = mpicc
+
+# C compile flags
+#CFLAGS = -p -g -O0 -Wall  # debug
+CFLAGS = -O2  # perf.
+
+# Location of C standard header files (stdlib.h, etc.)
+C_INCD = -I/usr/include
+
+# SUNDIALS installation location
+SUNDROOT = /usr/local/sundials-2.4.0
+
+# HYPRE installation location
+HYPREROOT = /usr/local/hypre-2.6.0b
+
+# MPI installation location (F90 compatible), and required libs
+MPIROOT  = 
+MPI_LIBS = 
+MPI_INCD = 
+MPI_LIBD = 
+
+
+####### End of Makefile #######
