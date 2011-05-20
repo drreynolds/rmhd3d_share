@@ -53,7 +53,7 @@ SRC_LPK = dgemm dgemv dger dgetf2 dgetrf dgetrs dlaswp dscal \
 OBJ_LPK = $(addprefix source/Lapack/, $(addsuffix .o, $(SRC_LPK)))
 
 # preconditioning files (hyperbolic and diffusive, respectively)
-PRECSRCH = ptri_parallel fastwave_prec combo_prec
+PRECSRCH = ptri_parallel fastwave_prec
 PRECSRCD = viscous_prec-Du viscous_prec-Db viscous_prec-De \
            vprec_solver vprec_mult combo_prec
 
