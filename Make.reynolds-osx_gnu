@@ -19,7 +19,8 @@ F77 = $(F90)
 F77FLAGS = -O2 -ffixed-form  # gnu perf.
 
 # SUNDIALS-specific preprocessor directives (F-to-C conversion)
-SUND_DEFS = -DSUNDIALS_CASE_LOWER -DSUNDIALS_UNDERSCORE_ONE -DLONGINT8
+SUND_DEFS = -DSUNDIALS_CASE_LOWER -DSUNDIALS_UNDERSCORE_ONE \
+            -DSUNDIALS_DOUBLE_PRECISION -DLONGINT8
 
 # C compiler (for SUNDIALS interface)
 CC = mpicc
