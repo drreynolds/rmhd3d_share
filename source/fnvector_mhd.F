@@ -1,12 +1,14 @@
 c -*- Mode: Fortran; -*-
 c-----------------------------------------------------------------------
+c     Ravi Samtaney
+c     KAUST, Mechanical Engineering
+c
 c     Daniel R. Reynolds
-c     UC San Diego, Mathematics
-c-----------------------------------------------------------------------
-c     $Log: fnvector_mhd.F,v $
+c     SMU, Mathematics
+c
+c     Copyright 2004
+c     All Rights Reserved
 c=======================================================================
-
-
 
       subroutine fnvmhdprint(xvec)
 c-----------------------------------------------------------------------
@@ -52,16 +54,7 @@ c-----------------------------------------------------------------------
 
 c=======Internals ============
 c$$$  write(*,*) 'entering fnvmhdlinsum, a =',aval,', b =',bval
-
-      do l=1,nvar,1
-         do k=1,nzlocal,1
-            do j=1,nylocal,1
-               do i=1,nxlocal,1
-                  zvec(i,j,k,l) = aval*xvec(i,j,k,l)+bval*yvec(i,j,k,l)
-               end do
-            end do
-         end do
-      end do
+      zvec = aval*xvec + bval*yvec
       
       return
       end subroutine fnvmhdlinsum
@@ -83,16 +76,7 @@ c-----------------------------------------------------------------------
 
 c=======Internals ============
 c$$$  write(*,*) 'entering fnvmhdconst'
-
-      do l=1,nvar,1
-         do k=izlo,izhi,1
-            do j=iylo,iyhi,1
-               do i=ixlo,ixhi,1
-                  zvec(i,j,k,l) = cval
-               end do
-            end do
-         end do
-      end do
+      zvec = cval
       
       return
       end subroutine fnvmhdconst
@@ -114,16 +98,7 @@ c-----------------------------------------------------------------------
 
 c=======Internals ============
 c$$$  write(*,*) 'entering fnvmhdprod'
-
-      do l=1,nvar,1
-         do k=1,nzlocal,1
-            do j=1,nylocal,1
-               do i=1,nxlocal,1
-                  zvec(i,j,k,l) = xvec(i,j,k,l)*yvec(i,j,k,l)
-               end do
-            end do
-         end do
-      end do
+      zvec = xvec*yvec
       
       return
       end subroutine fnvmhdprod
@@ -145,17 +120,16 @@ c-----------------------------------------------------------------------
 
 c=======Internals ============
 c$$$  write(*,*) 'entering fnvmhddiv'
-
       do l=1,nvar,1
          do k=1,nzlocal,1
             do j=1,nylocal,1
                do i=1,nxlocal,1
                   zvec(i,j,k,l) = xvec(i,j,k,l)/yvec(i,j,k,l)
-               end do
-            end do
-         end do
-      end do
-      
+               enddo
+            enddo
+         enddo
+      enddo
+
       return
       end subroutine fnvmhddiv
 c=======================================================================
@@ -177,16 +151,7 @@ c-----------------------------------------------------------------------
 
 c=======Internals ============
 c$$$  write(*,*) 'entering fnvmhdscale'
-
-      do l=1,nvar,1
-         do k=1,nzlocal,1
-            do j=1,nylocal,1
-               do i=1,nxlocal,1
-                  zvec(i,j,k,l) = cval*xvec(i,j,k,l)
-               end do
-            end do
-         end do
-      end do
+      zvec = cval*xvec
       
       return
       end subroutine fnvmhdscale
@@ -208,16 +173,7 @@ c-----------------------------------------------------------------------
 
 c=======Internals ============
 c$$$  write(*,*) 'entering fnvmhdabs'
-
-      do l=1,nvar,1
-         do k=1,nzlocal,1
-            do j=1,nylocal,1
-               do i=1,nxlocal,1
-                  zvec(i,j,k,l) = dabs(xvec(i,j,k,l))
-               end do
-            end do
-         end do
-      end do
+      zvec = abs(xvec)
 
       return
       end subroutine fnvmhdabs
@@ -239,7 +195,6 @@ c-----------------------------------------------------------------------
 
 c=======Internals ============
 c$$$  write(*,*) 'entering fnvmhdinv'
-
       do l=1,nvar,1
          do k=1,nzlocal,1
             do j=1,nylocal,1
@@ -271,16 +226,7 @@ c-----------------------------------------------------------------------
 
 c=======Internals ============
 c$$$  write(*,*) 'entering fnvmhdaddconst'
-
-      do l=1,nvar,1
-         do k=1,nzlocal,1
-            do j=1,nylocal,1
-               do i=1,nxlocal,1
-                  zvec(i,j,k,l) = xvec(i,j,k,l) + cval
-               end do
-            end do
-         end do
-      end do
+      zvec = xvec + cval
       
       return
       end subroutine fnvmhdaddconst
@@ -328,175 +274,6 @@ c$$$  write(*,*) 'entering fnvmhddotprod'
 
       return
       end subroutine fnvmhddotprod
-c=======================================================================
-
-
-
-      subroutine fnvmhddotprod_rho(xvec, yvec, cval)
-c-----------------------------------------------------------------------
-c     c = <x_rho,y_rho>
-c-----------------------------------------------------------------------
-      use mesh
-#ifdef PARALLEL
-      use mpistuff
-#endif
-      implicit none
-      double precision, dimension(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar),
-     &     intent(in)  :: xvec, yvec
-      double precision :: cval, cvalloc
-      integer :: i, j, k, mperr
-
-c=======Internals ============
-
-      cvalloc = 0.d0
-      do k=1,nzlocal,1
-         do j=1,nylocal,1
-            do i=1,nxlocal,1
-               cvalloc = cvalloc + xvec(i,j,k,1)*yvec(i,j,k,1)
-            end do
-         end do
-      end do
-
-#ifdef PARALLEL
-      call MPI_AllReduce(cvalloc, cval, 1, MPI_DOUBLE_PRECISION, 
-     &     MPI_SUM, comm3d, mperr)
-      if (mperr /= 0 ) then
-         write(0,*) 'fnvmhddotprod_rho MPI_AllReduce error = ',mperr
-      endif
-#else
-      cval = cvalloc
-#endif
-
-      return
-      end subroutine fnvmhddotprod_rho
-c=======================================================================
-
-
-
-      subroutine fnvmhddotprod_u(xvec, yvec, cval)
-c-----------------------------------------------------------------------
-c     c = <x_u,y_u>
-c-----------------------------------------------------------------------
-      use mesh
-#ifdef PARALLEL
-      use mpistuff
-#endif
-      implicit none
-      double precision, dimension(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar),
-     &     intent(in)  :: xvec, yvec
-      double precision :: cval, cvalloc
-      integer :: i, j, k, l, mperr
-
-c=======Internals ============
-
-      cvalloc = 0.d0
-      do l=2,4,1
-         do k=1,nzlocal,1
-            do j=1,nylocal,1
-               do i=1,nxlocal,1
-                  cvalloc = cvalloc + xvec(i,j,k,l)*yvec(i,j,k,l)
-               end do
-            end do
-         end do
-      end do
-
-#ifdef PARALLEL
-      call MPI_AllReduce(cvalloc, cval, 1, MPI_DOUBLE_PRECISION, 
-     &     MPI_SUM, comm3d, mperr)
-      if (mperr /= 0 ) then
-         write(0,*) 'fnvmhddotprod_u MPI_AllReduce error = ',mperr
-      endif
-#else
-      cval = cvalloc
-#endif
-
-      return
-      end subroutine fnvmhddotprod_u
-c=======================================================================
-
-
-
-      subroutine fnvmhddotprod_B(xvec, yvec, cval)
-c-----------------------------------------------------------------------
-c     c = <x_B,y_B>
-c-----------------------------------------------------------------------
-      use mesh
-#ifdef PARALLEL
-      use mpistuff
-#endif
-      implicit none
-      double precision, dimension(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar),
-     &     intent(in)  :: xvec, yvec
-      double precision :: cval, cvalloc
-      integer :: i, j, k, l, mperr
-
-c=======Internals ============
-
-      cvalloc = 0.d0
-      do l=5,7,1
-         do k=1,nzlocal,1
-            do j=1,nylocal,1
-               do i=1,nxlocal,1
-                  cvalloc = cvalloc + xvec(i,j,k,l)*yvec(i,j,k,l)
-               end do
-            end do
-         end do
-      end do
-
-#ifdef PARALLEL
-      call MPI_AllReduce(cvalloc, cval, 1, MPI_DOUBLE_PRECISION, 
-     &     MPI_SUM, comm3d, mperr)
-      if (mperr /= 0 ) then
-         write(0,*) 'fnvmhddotprod_B MPI_AllReduce error = ',mperr
-      endif
-#else
-      cval = cvalloc
-#endif
-
-      return
-      end subroutine fnvmhddotprod_B
-c=======================================================================
-
-
-
-      subroutine fnvmhddotprod_e(xvec, yvec, cval)
-c-----------------------------------------------------------------------
-c     c = <x_e,y_e>
-c-----------------------------------------------------------------------
-      use mesh
-#ifdef PARALLEL
-      use mpistuff
-#endif
-      implicit none
-      double precision, dimension(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar),
-     &     intent(in)  :: xvec, yvec
-      double precision :: cval, cvalloc
-      integer :: i, j, k, mperr
-
-c=======Internals ============
-c$$$  write(*,*) 'entering fnvmhddotprod'
-
-      cvalloc = 0.d0
-      do k=1,nzlocal,1
-         do j=1,nylocal,1
-            do i=1,nxlocal,1
-               cvalloc = cvalloc + xvec(i,j,k,8)*yvec(i,j,k,8)
-            end do
-         end do
-      end do
-
-#ifdef PARALLEL
-      call MPI_AllReduce(cvalloc, cval, 1, MPI_DOUBLE_PRECISION, 
-     &     MPI_SUM, comm3d, mperr)
-      if (mperr /= 0 ) then
-         write(0,*) 'fnvmhddotprod_e MPI_AllReduce error = ',mperr
-      endif
-#else
-      cval = cvalloc
-#endif
-
-      return
-      end subroutine fnvmhddotprod_e
 c=======================================================================
 
 
@@ -1031,174 +808,6 @@ c$$$  write(*,*) 'entering fnvmhdl1normvar'
       
       return
       end subroutine fnvmhdl1normvar
-c=======================================================================
-
-
-
-      subroutine fnvmhdl1norm_rho(xvec, cval)
-c-----------------------------------------------------------------------
-c     c = ||x_rho||_1
-c-----------------------------------------------------------------------
-      use mesh
-#ifdef PARALLEL
-      use mpistuff
-#endif
-      implicit none
-      double precision, dimension(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar),
-     &     intent(in)  :: xvec
-      double precision :: cval, cvalloc
-      integer :: i, j, k, mperr
-
-c=======Internals ============
-
-      cvalloc = 0.d0
-      do k=1,nzlocal,1
-         do j=1,nylocal,1
-            do i=1,nxlocal,1
-               cvalloc = cvalloc + dabs(xvec(i,j,k,1))
-            end do
-         end do
-      end do
-
-#ifdef PARALLEL
-      call MPI_AllReduce(cvalloc, cval, 1, MPI_DOUBLE_PRECISION, 
-     &     MPI_SUM, comm3d, mperr)
-      if (mperr /= 0 ) then
-         write(0,*) 'fnvmhdl1norm_rho MPI_AllReduce error = ',mperr
-      endif
-#else
-      cval = cvalloc
-#endif
-      
-      return
-      end subroutine fnvmhdl1norm_rho
-c=======================================================================
-
-
-
-      subroutine fnvmhdl1norm_u(xvec, cval)
-c-----------------------------------------------------------------------
-c     c = ||x_u||_1
-c-----------------------------------------------------------------------
-      use mesh
-#ifdef PARALLEL
-      use mpistuff
-#endif
-      implicit none
-      double precision, dimension(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar),
-     &     intent(in)  :: xvec
-      double precision :: cval, cvalloc
-      integer :: i, j, k, l, mperr
-
-c=======Internals ============
-
-      cvalloc = 0.d0
-      do l=2,4,1
-         do k=1,nzlocal,1
-            do j=1,nylocal,1
-               do i=1,nxlocal,1
-                  cvalloc = cvalloc + dabs(xvec(i,j,k,l))
-               end do
-            end do
-         end do
-      end do
-
-#ifdef PARALLEL
-      call MPI_AllReduce(cvalloc, cval, 1, MPI_DOUBLE_PRECISION, 
-     &     MPI_SUM, comm3d, mperr)
-      if (mperr /= 0 ) then
-         write(0,*) 'fnvmhdl1norm_u MPI_AllReduce error = ',mperr
-      endif
-#else
-      cval = cvalloc
-#endif
-      
-      return
-      end subroutine fnvmhdl1norm_u
-c=======================================================================
-
-
-
-      subroutine fnvmhdl1norm_B(xvec, cval)
-c-----------------------------------------------------------------------
-c     c = ||x_B||_1
-c-----------------------------------------------------------------------
-      use mesh
-#ifdef PARALLEL
-      use mpistuff
-#endif
-      implicit none
-      double precision, dimension(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar),
-     &     intent(in)  :: xvec
-      double precision :: cval, cvalloc
-      integer :: i, j, k, l, mperr
-
-c=======Internals ============
-
-      cvalloc = 0.d0
-      do l=5,7,1
-         do k=1,nzlocal,1
-            do j=1,nylocal,1
-               do i=1,nxlocal,1
-                  cvalloc = cvalloc + dabs(xvec(i,j,k,l))
-               end do
-            end do
-         end do
-      end do
-
-#ifdef PARALLEL
-      call MPI_AllReduce(cvalloc, cval, 1, MPI_DOUBLE_PRECISION, 
-     &     MPI_SUM, comm3d, mperr)
-      if (mperr /= 0 ) then
-         write(0,*) 'fnvmhdl1norm_B MPI_AllReduce error = ',mperr
-      endif
-#else
-      cval = cvalloc
-#endif
-      
-      return
-      end subroutine fnvmhdl1norm_B
-c=======================================================================
-
-
-
-      subroutine fnvmhdl1norm_e(xvec, cval)
-c-----------------------------------------------------------------------
-c     c = ||x_e||_1
-c-----------------------------------------------------------------------
-      use mesh
-#ifdef PARALLEL
-      use mpistuff
-#endif
-      implicit none
-      double precision, dimension(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar),
-     &     intent(in)  :: xvec
-      double precision :: cval, cvalloc
-      integer :: i, j, k, mperr
-
-c=======Internals ============
-
-      cvalloc = 0.d0
-      do k=1,nzlocal,1
-         do j=1,nylocal,1
-            do i=1,nxlocal,1
-               cvalloc = cvalloc + dabs(xvec(i,j,k,8))
-            end do
-         end do
-      end do
-
-#ifdef PARALLEL
-      call MPI_AllReduce(cvalloc, cval, 1, MPI_DOUBLE_PRECISION, 
-     &     MPI_SUM, comm3d, mperr)
-      if (mperr /= 0 ) then
-         write(0,*) 'fnvmhdl1norm_e MPI_AllReduce error = ',mperr
-      endif
-#else
-      cval = cvalloc
-#endif
-      
-      return
-      end subroutine fnvmhdl1norm_e
 c=======================================================================
 
 

@@ -1,6 +1,6 @@
 ###################################################################
 #  Makefile for unigrid resistive MHD code
-#  Daniel R. Reynolds, UCSD Mathematics
+#  Daniel R. Reynolds, SMU Mathematics
 ###################################################################
 
 # Automatic compilation of .o files from Fortran source
@@ -47,83 +47,46 @@ HEADS = nvector_mhd.h mesh.h mesh_common.h mesh_parms.h  \
         mesh_uparms_static.h mgparams.h mpistuff.h boundaries.h
 HEADERS = $(addprefix include/, $(HEADS))
 
-# necessary lapack/blas files
-SRC_LPK = dgemm dgemv dger dgetf2 dgetrf dgetrs dlaswp dscal \
-          dswap dtrsm idamax ieeeck ilaenv xerbla lsame
-OBJ_LPK = $(addprefix source/Lapack/, $(addsuffix .o, $(SRC_LPK)))
-
-# preconditioning files (hyperbolic and diffusive, respectively)
-PRECSRCH = ptri_parallel fastwave_prec
-PRECSRCD = viscous_prec-Du viscous_prec-Db viscous_prec-De \
-           vprec_solver vprec_mult combo_prec
-
 # expStatic source files and corresp. object files
 SRC1 = $(ALLSRC) $(VISCSRC) $(EXPSRC) init_static
 OBJ1 = $(addprefix source/, $(addsuffix .o, $(SRC1)))
 
 # kinStatic source files and corresp object files
-SRC2 = $(ALLSRC) $(VISCSRC) $(PRECSRCH) $(PRECSRCD) $(KINSRC) init_static
-OBJ2 = $(addprefix source/, $(addsuffix .o, $(SRC2))) $(OBJ_LPK)
+SRC2 = $(ALLSRC) $(VISCSRC) $(KINSRC) init_static
+OBJ2 = $(addprefix source/, $(addsuffix .o, $(SRC2)))
 
 # cvStatic source files and corresp object files
-SRC4 = $(ALLSRC) $(VISCSRC) $(PRECSRCH) $(PRECSRCD) $(CVSRC) init_static
-OBJ4 = $(addprefix source/, $(addsuffix .o, $(SRC4))) $(OBJ_LPK)
+SRC4 = $(ALLSRC) $(VISCSRC) $(CVSRC) init_static
+OBJ4 = $(addprefix source/, $(addsuffix .o, $(SRC4)))
 
 # expLinWave source files and corresp. object files
 SRC6 = $(ALLSRC) $(EXPSRC) initwave3
 OBJ6 = $(addprefix source/, $(addsuffix .o, $(SRC6)))
 
 # kinLinWave source files and corresp. object files
-SRC8 = $(ALLSRC) $(PRECSRCH) $(KINSRC) initwave3
-OBJ8 = $(addprefix source/, $(addsuffix .o, $(SRC8))) $(OBJ_LPK)
+SRC8 = $(ALLSRC) $(KINSRC) initwave3
+OBJ8 = $(addprefix source/, $(addsuffix .o, $(SRC8)))
 
 # cvLinWave source files and corresp. object files
-SRC7 = $(ALLSRC) $(PRECSRCH) $(CVSRC) initwave3
-OBJ7 = $(addprefix source/, $(addsuffix .o, $(SRC7))) $(OBJ_LPK)
+SRC7 = $(ALLSRC) $(CVSRC) initwave3
+OBJ7 = $(addprefix source/, $(addsuffix .o, $(SRC7)))
 
 # expKH source files and corresp. object files
 SRC9 = $(ALLSRC) $(VISCSRC) $(EXPSRC) initKH
 OBJ9 = $(addprefix source/, $(addsuffix .o, $(SRC9)))
 
 # kinKH source files and corresp. object files
-SRC11 = $(ALLSRC) $(VISCSRC) $(PRECSRCH) $(PRECSRCD) $(KINSRC) initKH 
-OBJ11 = $(addprefix source/, $(addsuffix .o, $(SRC11))) $(OBJ_LPK)
+SRC11 = $(ALLSRC) $(VISCSRC) $(KINSRC) initKH 
+OBJ11 = $(addprefix source/, $(addsuffix .o, $(SRC11)))
 
 # cvKH source files and corresp. object files
-SRC10 = $(ALLSRC) $(VISCSRC) $(PRECSRCH) $(PRECSRCD) $(CVSRC) initKH
-OBJ10 = $(addprefix source/, $(addsuffix .o, $(SRC10))) $(OBJ_LPK)
-
-# test_psol_scaling source files and corresp. object files
-PSOL_SCALING_TEST_SRC = $(addprefix source/, $(ALLSRC)) \
-                        source/init2 source/ptri_parallel \
-                        source/fastwave_prec tests/test_psol_scaling 
-PSOL_SCALING_TEST_OBJ = $(addsuffix .o, $(PSOL_SCALING_TEST_SRC)) $(OBJ_LPK)
-
-# test_psol_accuracy source files and corresp. object files
-PSOL_ACCURACY_TEST_SRC = $(addprefix source/, $(ALLSRC)) \
-                         source/init2 source/ptri_parallel \
-                         source/ptri_product tests/test_psol_accuracy
-PSOL_ACCURACY_TEST_OBJ = $(addsuffix .o, $(PSOL_ACCURACY_TEST_SRC)) $(OBJ_LPK)
-
-# test_driver source files and corresp. object files
-TEST_DRIVER_SRC = $(ALLSRC) $(PRECSRCH) $(PRECSRCD) init2 test_driver \
-                  impCVODE_interface nvector_mhd fnvector_mhd
-TEST_DRIVER_OBJ = $(addprefix source/, $(addsuffix .o, $(TEST_DRIVER_SRC))) $(OBJ_LPK)
+SRC10 = $(ALLSRC) $(VISCSRC) $(CVSRC) initKH
+OBJ10 = $(addprefix source/, $(addsuffix .o, $(SRC10)))
 
 # fnvec_mhd_test source files and corresp. object files
 FNVEC_TEST_SRC = source/modules source/nvector_mhd source/fnvector_mhd \
                  tests/test_nvec_mhd tests/test_fnvec_mhd 
 FNVEC_TEST_OBJ = $(addsuffix .o, $(FNVEC_TEST_SRC))
-
-# hypre_test source files and corresp. object files
-HYPRE_TEST_SRC = hypre_test viscous_prec-Du    \
-                 viscous_prec-Db viscous_prec-De
-HYPRE_TEST_OBJ = $(addprefix source/, $(addsuffix .o, $(HYPRE_TEST_SRC)))
-
-# fhypre_test source files and corresp. object files
-FHYPRE_TEST_SRC = fhypre_test viscous_prec-Du    \
-                  viscous_prec-Db viscous_prec-De
-FHYPRE_TEST_OBJ = $(addprefix source/, $(addsuffix .o, $(FHYPRE_TEST_SRC)))
 
 
 
@@ -136,20 +99,15 @@ SUND_LIBS   = -lm
 CVODE_LIBS  = -lsundials_fcvode -lsundials_cvode 
 KINSOL_LIBS = -lsundials_fkinsol -lsundials_kinsol
 
-# HYPRE interface requirements
-HYPRE_INCD   = -I${HYPREROOT}/include
-HYPRE_LIBD   = -L${HYPREROOT}/lib
-HYPRE_LIBS   = -lHYPRE
-
 # Final usable variables
-INCS    = -Iinclude ${MPI_INCD} ${SUND_INCD} ${HYPRE_INCD} ${C_INCD}
-KLIBS   = ${SUND_LIBD} ${KINSOL_LIBS} ${SUND_LIBS} ${HYPRE_LIBD} ${HYPRE_LIBS} ${MPI_LIBD} ${MPI_LIBS}
-CVLIBS  = ${SUND_LIBD} ${CVODE_LIBS} ${SUND_LIBS} ${HYPRE_LIBD} ${HYPRE_LIBS} ${MPI_LIBD} ${MPI_LIBS}
+INCS    = -Iinclude ${MPI_INCD} ${SUND_INCD} ${C_INCD}
+KLIBS   = ${SUND_LIBD} ${KINSOL_LIBS} ${SUND_LIBS} ${MPI_LIBD} ${MPI_LIBS}
+CVLIBS  = ${SUND_LIBD} ${CVODE_LIBS} ${SUND_LIBS} ${MPI_LIBD} ${MPI_LIBS}
 KLIBSH   = ${SUND_LIBD} ${KINSOL_LIBS} ${SUND_LIBS} ${MPI_LIBD} ${MPI_LIBS}
 CVLIBSH  = ${SUND_LIBD} ${CVODE_LIBS} ${SUND_LIBS} ${MPI_LIBD} ${MPI_LIBS}
 
 # compilation cleanup files
-TRASH = source/*.o source/Lapack/*.o tests/*.o *.mod source/*.il
+TRASH = source/*.o tests/*.o *.mod source/*.il
 
 
 
@@ -175,12 +133,7 @@ help :
 	@echo "     cvLinWave         [CVODE, variable dt]"
 	@echo " "
 	@echo "  Code Tests:"
-	@echo "     test_psol_scaling  [tests scaling of ptri_parallel]"
-	@echo "     test_psol_accuracy [tests accuracy of ptri_parallel]"
-	@echo "     test_driver       [driver to run customized tests]"
 	@echo "     fnvec_mhd_test    [checks F90/C vector kernel interface]"
-	@echo "     hypre_test        [checks C hypre interface]"
-	@echo "     fhypre_test       [checks F90 hypre interface]"
 	@echo " "
 	@echo "  Clean-up:"
 	@echo "     clean             [cleans temporary build files]"
@@ -240,23 +193,8 @@ cvKH : ${HEADERS} ${OBJ10}
 cvKH2 : ${HEADERS} ${OBJ10N}
 	${F90} ${FFLAGS_} -o $@ ${OBJ10N} ${INCS} ${CVLIBS} 
 
-test_psol_scaling : ${HEADERS} ${PSOL_SCALING_TEST_OBJ}
-	${F90} ${FFLAGS_} -o $@ ${PSOL_SCALING_TEST_OBJ} ${INCS}
-
-test_psol_accuracy : ${HEADERS} ${PSOL_ACCURACY_TEST_OBJ}
-	${F90} ${FFLAGS_} -o $@ ${PSOL_ACCURACY_TEST_OBJ} ${INCS}
-
-test_driver : ${HEADERS} ${TEST_DRIVER_OBJ}
-	${F90} ${FFLAGS_} -o $@ ${TEST_DRIVER_OBJ} ${INCS} ${CVLIBS} 
-
 fnvec_mhd_test : ${HEADERS} ${FNVEC_TEST_OBJ}
 	${F90} ${FFLAGS_} -o $@ ${FNVEC_TEST_OBJ} ${INCS} ${KLIBS}
-
-hypre_test : ${HEADERS} ${HYPRE_TEST_OBJ}
-	${F90} ${FFLAGS_} -o $@ ${HYPRE_TEST_OBJ} ${INCS} ${HYPRE_LIBD} ${HYPRE_LIBS} ${MPI_LIBD} ${MPI_LIBS} -lm
-
-fhypre_test : ${HEADERS} ${FHYPRE_TEST_OBJ}
-	${F90} ${FFLAGS_} -o $@ ${FHYPRE_TEST_OBJ} ${INCS} ${HYPRE_LIBD} ${HYPRE_LIBS} ${MPI_LIBD} ${MPI_LIBS} -lm
 
 
 clean:

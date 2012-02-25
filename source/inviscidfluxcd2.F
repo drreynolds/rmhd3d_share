@@ -1,13 +1,14 @@
 c -*- Mode: Fortran; -*-
 c-----------------------------------------------------------------------
+c     Ravi Samtaney
+c     KAUST, Mechanical Engineering
+c
 c     Daniel R. Reynolds
-c     UC San Diego, Mathematics
-c-----------------------------------------------------------------------
-c     $Log: inviscidfluxcd2.F,v $
+c     SMU, Mathematics
+c
+c     Copyright 2004
+c     All Rights Reserved
 c=======================================================================
-
-
-
 
       subroutine InviscidFluxCD2(finv,vx,direction,dt)
 c-----------------------------------------------------------------------

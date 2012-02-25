@@ -1,12 +1,12 @@
 &kinsol_controls
   tstop       = 1.0d3,
   dtfac       = 1.0d0,
-  theta       = 0.55d0,
+  theta       = 0.5d0,
 
   useMyPrec   = 0,
   freezePrec  = 0,
   initpcond   = 0,
-  msbpre      = 0,
+  msbpre      = 1,
 
   lsolver     = 0,
   maxl        = 50,

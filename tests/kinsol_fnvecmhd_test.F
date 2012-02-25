@@ -1,7 +1,7 @@
       program kinsol_fnvecmhd_test
 c=======================================================================c
 c     File        : kinsol_fnvecmhd_test.F                              c
-c     Programmers : Daniel R. Reynolds @ LLNL                           c
+c     Programmers : Daniel R. Reynolds @ SMU                            c
 c     Version of  : 2 October 2003                                      c
 c-----------------------------------------------------------------------c
 c     This testing routine is used to ensure the interface of the       c

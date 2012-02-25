@@ -1,16 +1,15 @@
 C -*- Mode: Fortran; -*-
 c-----------------------------------------------------------------
 c     Ravi Samtaney
-c     Copyright 2004
-c     Princeton Plasma Physics Laboratory
-c     All Rights Reserved
+c     KAUST, Mechanical Engineering
 c
 c     Daniel R. Reynolds
-c     UC San Diego, Mathematics
+c     SMU, Mathematics
 c
-c-----------------------------------------------------------------
-c     $Log: mhdsolverk4.F,v $
+c     Copyright 2004
+c     All Rights Reserved
 c-----------------------------------------------------------------------
+
 c$$$      module TVDCOEFFS
 c$$$      save
 c$$$      double precision:: tvdCoeff1(3)

@@ -56,23 +56,6 @@ General parameters:
   - etaFactor - unused
   - kappa - thermal conductivity coefficient
 
-[prec.inp]
-
- prec namelist:
- - hprec - enable hyperbolic preconditioning
- - vprec - enable diffusive preconditioning
- - method - choice of how to combine hyperbolic and diffusive
-   preconditioning if both are enabled:
-      1 => standard operator-split form, hyperbolic then diffusive (default)
-      2 => standard operator-split form, diffusive then hyperbolic 
-      3 => predictor-corrector form, hyperbolic then diffusive
-      4 => predictor-corrector form, diffusive then hyperbolic 
-
- fwprec namelist:
- - NWaves - number of waves to precondition (8 is the max & default)
- - ADIcorrection - whether to use ADI correction (1) or not (0) (0
-   seems best and is the default) 
- - ordering - derivation of ADI correction to use (0 is best & default)
 
 
 ------------------

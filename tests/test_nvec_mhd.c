@@ -1,6 +1,6 @@
 /*************************************************************************
  * File        : nvec_mhd_test.c                                         *
- * Programmers : Daniel R. Reynolds @ LLNL                               *
+ * Programmers : Daniel R. Reynolds @ SMU                                *
  * Version of  : 2 October 2003                                          *
  *-----------------------------------------------------------------------*
  * This testing routine is to be called by the Fortran testing routine   *

@@ -1,7 +1,7 @@
  /******************************************************************
  *                                                                 *
  * File          : nvec_mhd_test.h                                 *
- * Programmers   : Daniel R. Reynolds @ LLNL                       *
+ * Programmers   : Daniel R. Reynolds @ SMU                        *
  * Version of    : 20 April 2004                                   *
  *-----------------------------------------------------------------*
  *  This is the header file for the nvec_mhd_test.c routine, which *

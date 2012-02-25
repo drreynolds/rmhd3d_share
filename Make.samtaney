@@ -1,6 +1,6 @@
 ###################################################################
 #  machine-specific Makefile for unigrid resistive MHD code
-#  Daniel R. Reynolds, UCSD Mathematics
+#  Daniel R. Reynolds, SMU Mathematics
 ###################################################################
 
 
@@ -37,9 +37,6 @@ C_INCD = -I/usr/include
 
 # SUNDIALS installation location
 SUNDROOT = ../sundials
-
-# HYPRE installation location
-HYPREROOT = 
 
 # MPI installation location (F90 compatible), and required libs
 MPIROOT  = /usr/local/lff95/mpi

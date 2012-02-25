@@ -1,6 +1,6 @@
 ###################################################################
 #  Problem configuration Makefile
-#  Daniel R. Reynolds, UCSD Mathematics
+#  Daniel R. Reynolds, SMU Mathematics
 ###################################################################
 
 ####### Compile-time problem definitions #######
@@ -28,11 +28,7 @@ DISCRETIZATION =
 # Viscous fluxes:        -DNOVISCFLUX (default is on)
 EXTRADEFS = -DPARALLEL -DNOVISCFLUX -DDYNAMIC
 
-# HYPRE-specific preprocessor directives
-# Note: if we're NOT using -DPARALLEL, then we must use -DHYPRE_SEQUENTIAL
-HYPRE_DEFS =
-
 # overall problem-specific preprocessor directives
-PROB_DEFS = $(DIMENSION) $(DISCRETIZATION) $(EXTRADEFS) $(HYPRE_DEFS)
+PROB_DEFS = $(DIMENSION) $(DISCRETIZATION) $(EXTRADEFS)
 
 ####### End of Make.config #######

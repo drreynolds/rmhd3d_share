@@ -1,15 +1,13 @@
 c -*- Mode: Fortran; -*-
 c-----------------------------------------------------------------
 c     Ravi Samtaney
-c     Copyright 2001
-c     Princeton Plasma Physics Laboratory
-c     All Rights Reserved
+c     KAUST, Mechanical Engineering
 c
 c     Daniel R. Reynolds
-c     UC San Diego, Mathematics
+c     SMU, Mathematics
 c
-c-----------------------------------------------------------------
-c     $Log: bdryexchange.F,v $
+c     Copyright 2004
+c     All Rights Reserved
 c-----------------------------------------------------------------
       
       integer function iprocnum(ipx, ipy, ipz)

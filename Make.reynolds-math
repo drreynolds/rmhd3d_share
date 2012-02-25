@@ -31,9 +31,6 @@ C_INCD = -I/usr/include
 # SUNDIALS installation location
 SUNDROOT = /usr/local/sundials-2.3.0/intel
 
-# HYPRE installation location
-HYPREROOT = /usr/local/hypre-2.2.0b/intel
-
 # MPI installation location (F90 compatible), and required libs
 MPIROOT  = /usr/local/mpich2-1.0.7/intel
 MPI_LIBS = -lmpich -lmpichf90

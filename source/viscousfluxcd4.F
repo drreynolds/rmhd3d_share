@@ -1,16 +1,15 @@
-C -*- Mode: Fortran; -*-
+c -*- Mode: Fortran; -*-
+c-----------------------------------------------------------------
 c     Ravi Samtaney
-c     Copyright 2004
-c     Princeton Plasma Physics Laboratory
-c     All Rights Reserved
-c     
-c     Daniel R. Reynolds
-c     UC San Diego, Mathematics
-c     
-c-----------------------------------------------------------------------
-c     $Log: viscousfluxcd4.F,v $
-c-----------------------------------------------------------------------
+c     KAUST, Mechanical Engineering
 c
+c     Daniel R. Reynolds
+c     SMU, Mathematics
+c
+c     Copyright 2004
+c     All Rights Reserved
+c-----------------------------------------------------------------------
+
       subroutine ViscousFluxCD4(fvis,vx,dudx,dbdx,
      &     direction,dt,indx,indy,indz)
 c-----------------------------------------------------------------------

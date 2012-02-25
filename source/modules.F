@@ -1,17 +1,13 @@
 c -*- Mode: Fortran; -*-
 c-----------------------------------------------------------------
-c Original code:
 c     Ravi Samtaney
-c     Copyright 2003
-c     Princeton Plasma Physics Laboratory
-c     All Rights Reserved
+c     KAUST, Mechanical Engineering
 c
-c Revised for additional diagnositics, implicit time integration, 
-c and clarity:
 c     Daniel R. Reynolds
-c     UC San Diego, Mathematics
-c-----------------------------------------------------------------
-c     $Log: modules.F,v $
+c     SMU, Mathematics
+c
+c     Copyright 2004
+c     All Rights Reserved
 c-----------------------------------------------------------------
 c     Description: chooses dynamic/static grid modules, inputs 
 c        problem properties, etc.

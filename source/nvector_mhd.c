@@ -1,6 +1,6 @@
 /*******************************************************************
  * Daniel R. Reynolds                                              *
- * UC San Diego, Mathematics                                       *
+ * SMU, Mathematics                                                *
  *-----------------------------------------------------------------*
  * This is the implementation file for an implementation           *
  * of the NVECTOR package, specifically suited to interface with a *

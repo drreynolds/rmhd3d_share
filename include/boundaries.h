@@ -1,14 +1,14 @@
 c -*- Mode: Fortran; -*-
 c-----------------------------------------------------------------
-c Original code:
+c     Ravi Samtaney
+c     KAUST, Mechanical Engineering
+c
 c     Daniel R. Reynolds
-c     Copyright 2007
-c     UC San Diego, Mathematics
+c     SMU, Mathematics
+c
+c     Copyright 2004
 c     All Rights Reserved
-c-----------------------------------------------------------------
-c     $Log: boundaries.h,v $
 c=================================================================
-
 
       module boundary_conds
 c-----------------------------------------------------------------

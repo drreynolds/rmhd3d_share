@@ -1,19 +1,14 @@
 c -*- Mode: Fortran; -*-
 c-----------------------------------------------------------------
-c Original code:
 c     Ravi Samtaney
-c     Copyright 2003
-c     Princeton Plasma Physics Laboratory
-c     All Rights Reserved
+c     KAUST, Mechanical Engineering
 c
-c Revised for implicit time integration and clarity:
 c     Daniel R. Reynolds
-c     UC San Diego, Mathematics
-c-----------------------------------------------------------------
-c     $Log: expRMHD_driver.F,v $
+c     SMU, Mathematics
+c
+c     Copyright 2004
+c     All Rights Reserved
 c=================================================================
-
-
 
       subroutine MHDMain
 c-----------------------------------------------------------------

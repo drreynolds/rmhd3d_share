@@ -27,7 +27,7 @@ function [rho,u,v,w,Bx,By,Bz,p,divB,J,e,x,y,z] = read_output3d(fname,Nx,Ny,Nz)
 %         z - z-coordinates (1D)
 %
 % Daniel Reynolds
-% Mathematics @ U.C. San Diego
+% Mathematics @ SMU
 %
 
 % open file for input

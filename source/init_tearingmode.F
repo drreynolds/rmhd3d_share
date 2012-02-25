@@ -1,8 +1,12 @@
 C -*- Mode: Fortran; -*-
 c----------------------------------------------------------------------
-c     Daniel Reynolds
-c     Copyright 2006
-c     University of California, San Diego
+c     Ravi Samtaney
+c     KAUST, Mechanical Engineering
+c
+c     Daniel R. Reynolds
+c     SMU, Mathematics
+c
+c     Copyright 2004
 c     All Rights Reserved
 c----------------------------------------------------------------------
 c     Subroutine to set up the initial conditions for resistive 
@@ -14,8 +18,6 @@ c     initial state (also missing from Chacon's paper/poster), if
 c     there is one for this problem (there is in other tearing mode 
 c     formulations).
 c----------------------------------------------------------------------
-
-
 
       subroutine InitialConditions(ux,phi)
 c----------------------------------------------------------------------

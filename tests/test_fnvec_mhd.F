@@ -1,7 +1,7 @@
       program fnvec_mhd_test
 c=======================================================================c
 c     File        : fnvec_mhd_test.F                                    c
-c     Programmers : Daniel R. Reynolds @ LLNL                           c
+c     Programmers : Daniel R. Reynolds @ SMU                            c
 c     Version of  : 2 October 2003                                      c
 c-----------------------------------------------------------------------c
 c     This testing routine is used to ensure the validity of the        c

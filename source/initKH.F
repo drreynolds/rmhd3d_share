@@ -1,13 +1,18 @@
 C -*- Mode: Fortran; -*-
 c----------------------------------------------------------------------
+c     Ravi Samtaney
+c     KAUST, Mechanical Engineering
+c
 c     Daniel R. Reynolds
-c     UC San Diego, Mathematics
-c----------------------------------------------------------------------
-c     $Log: initKH.F,v $
+c     SMU, Mathematics
+c
+c     Copyright 2004
+c     All Rights Reserved
 c----------------------------------------------------------------------
 c Subroutine to set up the initial conditions for 
 c Kelvin-Helmholtz instability test problem
 c----------------------------------------------------------------------
+
       subroutine InitialConditions(ux,phi)
 c----------------------------------------------------------------------
       use mesh

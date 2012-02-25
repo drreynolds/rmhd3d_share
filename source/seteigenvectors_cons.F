@@ -1,5 +1,15 @@
-C -*- Mode: Fortran; -*-
+c -*- Mode: Fortran; -*-
+c-----------------------------------------------------------------
+c     Ravi Samtaney
+c     KAUST, Mechanical Engineering
+c
+c     Daniel R. Reynolds
+c     SMU, Mathematics
+c
+c     Copyright 2004
+c     All Rights Reserved
 c-----------------------------------------------------------------------
+
       module evectors_conservative
       contains
       subroutine SetEigenSystem(utilde,evl,evr,alamda,ilo,ihi,direction)

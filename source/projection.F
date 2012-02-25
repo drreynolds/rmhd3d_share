@@ -1,16 +1,17 @@
 C -*- Mode: Fortran; -*-
 c-----------------------------------------------------------------
 c     Ravi Samtaney
-c     Copyright 2003
-c     Princeton Plasma Physics Laboratory
-c     All Rights Reserved
+c     KAUST, Mechanical Engineering
 c
 c     Daniel R. Reynolds
-c     UC San Diego, Mathematics
+c     SMU, Mathematics
 c
+c     Copyright 2004
+c     All Rights Reserved
 c-----------------------------------------------------------------
 c     Multigrid projection
 c-----------------------------------------------------------------------
+
        subroutine Projection(phi,divb)
 c-----------------------------------------------------------------
 c     Input: divb - cell centered divergence calculated using face

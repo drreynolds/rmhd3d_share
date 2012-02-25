@@ -30,11 +30,11 @@
 
   rtol        = 1.0d-7,
 
-  atol1       = 1.0d-13,
-  atol2       = 1.0d-16,
-  atol3       = 1.0d-16,
-  atol4       = 1.0d-13,
-  atol5       = 1.0d-14,
-  atol6       = 1.0d-14,
-  atol7       = 1.0d-12,
+  atol1       = 1.0d-11,
+  atol2       = 1.0d-11,
+  atol3       = 1.0d-11,
+  atol4       = 1.0d-11,
+  atol5       = 1.0d-11,
+  atol6       = 1.0d-11,
+  atol7       = 1.0d-11,
   atol8       = 1.0d-11 /
