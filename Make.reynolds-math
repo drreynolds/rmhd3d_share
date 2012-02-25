@@ -16,7 +16,7 @@ FFLAGS = -O2 -FI -assume bscc # intel perf.
 F77FLAGS = -O2 -FI  # intel perf.
 
 # SUNDIALS-specific preprocessor directives (F-to-C conversion)
-SUND_DEFS = -DSUNDIALS_CASE_LOWER -DLONGINT8
+SUND_DEFS = -DSUNDIALS_CASE_LOWER
 
 # C compiler
 CC = mpiicc

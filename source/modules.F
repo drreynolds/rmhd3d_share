@@ -27,15 +27,15 @@ c======= General Inclusions ===========
 	include 'mgparams.h'
 	include 'boundaries.h'
 
-#ifdef LONGINT8
+#ifdef LONGINT4
 	module sundials_fcmix
 	save
-	integer, parameter :: sund_long_int=8
+	integer, parameter :: sund_long_int=4
 	end module sundials_fcmix
 #else
 	module sundials_fcmix
 	save
-	integer, parameter :: sund_long_int=4
+	integer, parameter :: sund_long_int=8
 	end module sundials_fcmix
 #endif
 
