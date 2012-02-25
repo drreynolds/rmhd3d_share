@@ -230,6 +230,30 @@ extern "C" {
 #define FNVMHD_CONSTRMASK   FNVMHDCONSTRMASK__
 #define FNVMHD_MINQUOTIENT  FNVMHDMINQUOTIENT__
 
+#else  /* default to lowercase, 1 underscore */
+
+#define FNVMHD_INIT         fnvinitmhd_
+#define FNVMHD_PRINT        fnvmhdprint_
+#define FNVMHD_LINSUM       fnvmhdlinsum_
+#define FNVMHD_CONST        fnvmhdconst_
+#define FNVMHD_PROD         fnvmhdprod_
+#define FNVMHD_DIV          fnvmhddiv_
+#define FNVMHD_SCALE        fnvmhdscale_
+#define FNVMHD_ABS          fnvmhdabs_
+#define FNVMHD_INV          fnvmhdinv_
+#define FNVMHD_ADDCONST     fnvmhdaddconst_
+#define FNVMHD_DOTPROD      fnvmhddotprod_
+#define FNVMHD_MAXNORM      fnvmhdmaxnorm_
+#define FNVMHD_WRMSNORM     fnvmhdwrmsnorm_
+#define FNVMHD_WRMSNORMMASK fnvmhdwrmsnormmask_
+#define FNVMHD_MIN          fnvmhdmin_
+#define FNVMHD_WL2NORM      fnvmhdwl2norm_
+#define FNVMHD_L1NORM       fnvmhdl1norm_
+#define FNVMHD_COMPARE      fnvmhdcompare_
+#define FNVMHD_INVTEST      fnvmhdinvtest_
+#define FNVMHD_CONSTRMASK   fnvmhdconstrmask_
+#define FNVMHD_MINQUOTIENT  fnvmhdminquotient_
+
 #endif
 
   /* Declarations of global variables */
