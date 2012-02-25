@@ -4,16 +4,16 @@
 # imports
 from pylab import *
 import shlex
-import mhd2d_tools as mhd2d
+import mhd3d_tools as mhd3d
 
 # load the relevant files, and parameters
-times, energy, mass = mhd2d.load_cons()
-kenergy, menergy, ienergy = mhd2d.load_energies()
-xl, xr, yl, yr, zl, zr, ndump = mhd2d.load_mhd()
-mu, eta, kappa, gamma = load_props()
-hprec, vprec, combo, nwaves, order, ADIcorr = load_prec()
-nx, ny, nz, xprocs, yprocs, zprocs, xbc, ybc, zbc = load_mesh()
-Newton, Krylov, Fnorm, dB, SolTime = load_RunHistory()
+times, energy, mass = mhd3d.load_cons()
+kenergy, menergy, ienergy = mhd3d.load_energies()
+xl, xr, yl, yr, zl, zr, ndump = mhd3d.load_mhd()
+mu, eta, kappa, gamma = mhd3d.load_props()
+hprec, vprec, combo, nwaves, order, ADIcorr = mhd3d.load_prec()
+nx, ny, nz, xprocs, yprocs, zprocs, xbc, ybc, zbc = mhd3d.load_mesh()
+Newton, Krylov, Fnorm, dB, SolTime = mhd3d.load_RunHistory()
 
 # plot conservation of energy
 figure()
@@ -96,7 +96,7 @@ sl = int(nz/2)
 for tstep in range(0,Nt+1,ndump):
     
     # load solution data
-    x,y,z,rho,u,v,w,bx,by,bz,p,dB,j,te = mhd2d.load_vals(tstep)
+    x,y,z,rho,u,v,w,bx,by,bz,p,dB,j,te = mhd3d.load_vals(tstep)
 
     # rho contour
     figure()
