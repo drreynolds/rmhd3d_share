@@ -11,7 +11,6 @@ times, energy, mass = mhd3d.load_cons()
 kenergy, menergy, ienergy = mhd3d.load_energies()
 xl, xr, yl, yr, zl, zr, ndump = mhd3d.load_mhd()
 mu, eta, kappa, gamma = mhd3d.load_props()
-hprec, vprec, combo, nwaves, order, ADIcorr = mhd3d.load_prec()
 nx, ny, nz, xprocs, yprocs, zprocs, xbc, ybc, zbc = mhd3d.load_mesh()
 Newton, Krylov, Fnorm, dB, SolTime = mhd3d.load_RunHistory()
 

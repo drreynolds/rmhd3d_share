@@ -57,30 +57,6 @@ def load_props():
     return [mu, eta, kappa, gamma]    
 
 ##########
-def load_prec():
-    """Returns hprec, vprec, combo, nwaves, order, ADIcorr from prec.inp"""
-    import shlex
-    # load the preconditioner options
-    f = open("prec.inp")
-    hprec=0;  vprec=0;  method=0;  NWaves=0;  ordering=0;  ADIcorr=0;
-    for line in f:
-        txt = shlex.split(line)
-        if ("hprec" in txt):
-            hprec = int(txt[len(txt)-1].replace(',',''))
-        elif ("vprec" in txt):
-            vprec = int(txt[len(txt)-1].replace(',',''))
-        elif ("method" in txt):
-            method = int(txt[len(txt)-1].replace(',',''))
-        elif ("NWaves" in txt):
-            NWaves = int(txt[len(txt)-1].replace(',',''))
-        elif ("ordering" in txt):
-            ordering = int(txt[len(txt)-1].replace(',',''))
-        elif ("ADIcorrection" in txt):
-            ADIcorr = int(txt[len(txt)-1].replace(',',''))
-    f.close()
-    return [hprec, vprec, method, NWaves, ordering, ADIcorr]
-
-##########
 def load_mhd():
     """Returns xl,xr,yl,yr,zl,zr,ndump from mhd.inp"""
     import shlex
