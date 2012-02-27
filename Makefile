@@ -83,6 +83,18 @@ OBJ11 = $(addprefix source/, $(addsuffix .o, $(SRC11)))
 SRC10 = $(ALLSRC) $(VISCSRC) $(CVSRC) initKH
 OBJ10 = $(addprefix source/, $(addsuffix .o, $(SRC10)))
 
+# exp_island source files and corresp. object files
+SRC12 = $(ALLSRC) $(VISCSRC) $(EXPSRC) init_island
+OBJ12 = $(addprefix source/, $(addsuffix .o, $(SRC12)))
+
+# kin_island source files and corresp. object files
+SRC13 = $(ALLSRC) $(VISCSRC) $(KINSRC) init_island
+OBJ13 = $(addprefix source/, $(addsuffix .o, $(SRC13)))
+
+# cv_island source files and corresp. object files
+SRC14 = $(ALLSRC) $(VISCSRC) $(CVSRC) init_island
+OBJ14 = $(addprefix source/, $(addsuffix .o, $(SRC14)))
+
 # fnvec_mhd_test source files and corresp. object files
 FNVEC_TEST_SRC = source/modules source/nvector_mhd source/fnvector_mhd \
                  tests/test_nvec_mhd tests/test_fnvec_mhd 
@@ -131,6 +143,12 @@ help :
 	@echo "     expLinWave        [explicit, fixed dt]"
 	@echo "     kinLinWave        [KINSOL, fixed dt]"
 	@echo "     cvLinWave         [CVODE, variable dt]"
+	@echo " "
+	@echo " "
+	@echo "  Island Coalescence Tests (resistive):"
+	@echo "     exp_island        [explicit, fixed dt]"
+	@echo "     kin_island        [KINSOL, fixed dt]"
+	@echo "     cv_island         [CVODE, variable dt]"
 	@echo " "
 	@echo "  Code Tests:"
 	@echo "     fnvec_mhd_test    [checks F90/C vector kernel interface]"
@@ -184,14 +202,17 @@ expKH : ${HEADERS} ${OBJ9}
 kinKH : ${HEADERS} ${OBJ11}
 	${F90} ${FFLAGS_} -o $@ ${OBJ11} ${INCS} ${KLIBS} 
 
-kinKH2 : ${HEADERS} ${OBJ11N}
-	${F90} ${FFLAGS_} -o $@ ${OBJ11N} ${INCS} ${KLIBS} 
-
 cvKH : ${HEADERS} ${OBJ10}
 	${F90} ${FFLAGS_} -o $@ ${OBJ10} ${INCS} ${CVLIBS} 
 
-cvKH2 : ${HEADERS} ${OBJ10N}
-	${F90} ${FFLAGS_} -o $@ ${OBJ10N} ${INCS} ${CVLIBS} 
+exp_island : ${HEADERS} ${OBJ12}
+	${F90} ${FFLAGS_} -o $@ ${OBJ12} ${INCS} ${MPI_LIBD} ${MPI_LIBS} 
+
+kin_island : ${HEADERS} ${OBJ13}
+	${F90} ${FFLAGS_} -o $@ ${OBJ13} ${INCS} ${KLIBS} 
+
+cv_island : ${HEADERS} ${OBJ14}
+	${F90} ${FFLAGS_} -o $@ ${OBJ14} ${INCS} ${CVLIBS} 
 
 fnvec_mhd_test : ${HEADERS} ${FNVEC_TEST_OBJ}
 	${F90} ${FFLAGS_} -o $@ ${FNVEC_TEST_OBJ} ${INCS} ${KLIBS}
@@ -201,7 +222,7 @@ clean:
 	\rm -f ${TRASH}
 
 outclean:
-	\rm -f C_test* F_test* *.txt *.history output.0* outavs.00* dump.* gmon.out precmat.* rhsvec.*
+	\rm -f C_test* F_test* *.txt *.history output.0* outavs.00* dump.* gmon.out precmat.* rhsvec.* *.png
 
 tempclean: clean
 	\rm -i *~ source/*~ include/*~
