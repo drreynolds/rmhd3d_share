@@ -497,12 +497,18 @@ c     2-D calculation of the local toroidal current
       
 c     3-D calculation of the local toroidal current
 #else
-      do k = 1,nzlocal,1	
+      do k = 1,nzlocal,1
          do j = 1,nylocal,1
             do i = 1,nxlocal,1
-               Jcur(i,j,k) = dxi*(Bx(i+1,j,k)-Bx(i-1,j,k)) +
-     &                       dyi*(By(i,j+1,k)-By(i,j-1,k)) +
-     &                       dzi*(Bz(i,j,k+1)-Bz(i,j,k-1))
+c$$$c                  x-directional current
+c$$$                   Jcur(i,j,k) = dzi*(By(i,j,k+1)-By(i,j,k-1)) -
+c$$$     &                           dyi*(Bz(i,j+1,k)-Bz(i,j-1,k))
+c$$$c                  y-directional current
+c$$$                   Jcur(i,j,k) = dxi*(Bz(i+1,j,k)-Bz(i-1,j,k)) -
+c$$$     &                           dzi*(Bx(i,j,k+1)-Bx(i,j,k-1))
+c                  z-directional current
+                   Jcur(i,j,k) = dyi*(Bx(i,j+1,k)-Bx(i,j-1,k)) -
+     &                           dxi*(By(i+1,j,k)-By(i-1,j,k))
             enddo
          enddo
       enddo

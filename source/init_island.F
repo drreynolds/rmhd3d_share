@@ -32,6 +32,7 @@ c     local variables
       double precision :: xloc, yloc, zloc, pi, den
       double precision :: lambda, epsilon, p0, perturb
       double precision :: press, Bx, By, etot
+      double precision :: pE, pW, pN, pS, xE, xW, yN, yS
 
       namelist /molwts/ wmol
       namelist /gammas/ gamma
@@ -89,24 +90,53 @@ c     iterate over the domain to set up x-velocity
 
          do j=iylo,iyhi,1
             yloc = YLloc + (j-0.5D0)*dy
+            yS = yloc - dy
+            yN = yloc + dy
 
             do i=ixlo,ixhi,1
                xloc = XLloc + (i-0.5D0)*dx
+               xW = xloc - dx
+               xE = xloc + dx
 
 c              set pressure 
-               press = p0 + (1-epsilon**2)/2.d0/(cosh(xloc/lambda) 
-     &                       + epsilon*cos(yloc/lambda))**2
+               press = p0 + (1-epsilon**2)/2.d0*(cosh(xloc/lambda) 
+     &                       + epsilon*cos(yloc/lambda))**(-2)
 
-c              compute denominator used in magnetic fields
-               den = cosh(xloc/lambda) + epsilon*cos(yloc/lambda)
 
-c              set x-magnetic field
-               Bx = -epsilon*sin(yloc/lambda)/den + perturb*(pi*yloc)
-     &              * sin(0.5d0*pi*xloc)*sin(pi*yloc)*cos(pi*zloc)
+ccccc Analytical approach for initial conditions (more accurate) ccccc
+c$$$c              compute denominator used in magnetic fields
+c$$$               den = cosh(xloc/lambda) + epsilon*cos(yloc/lambda)
+c$$$
+c$$$c              set x-magnetic field
+c$$$               Bx = -epsilon*sin(yloc/lambda)/den + perturb*pi
+c$$$     &              * sin(0.5d0*pi*xloc)*sin(pi*yloc)*cos(pi*zloc)
+c$$$
+c$$$c              set y-magnetic field
+c$$$               By = -sinh(xloc/lambda)/den + perturb*0.5d0*pi
+c$$$     &              * cos(0.5d0*pi*xloc)*cos(pi*yloc)*cos(pi*zloc)
 
-c              set y-magnetic field
-               By = -sinh(xloc/lambda)/den + perturb*(0.5d0*pi*xloc)
-     &              * cos(0.5d0*pi*xloc)*cos(pi*yloc)*cos(pi*zloc)
+
+ccccc Numerical approach for initial conditions (better numerical 
+ccccc preservation of divergence constraint on B field) ccccc
+
+c              compute psi in neighboring cells
+               pE = -lambda*log(cosh(xE/lambda) 
+     &              + epsilon*cos(yloc/lambda)) 
+     &              + perturb*sin(0.5d0*pi*xE)*cos(pi*yloc)*cos(pi*zloc)
+               pW = -lambda*log(cosh(xW/lambda) 
+     &              + epsilon*cos(yloc/lambda)) 
+     &              + perturb*sin(0.5d0*pi*xW)*cos(pi*yloc)*cos(pi*zloc)
+               pN = -lambda*log(cosh(xloc/lambda) 
+     &              + epsilon*cos(yN/lambda)) 
+     &              + perturb*sin(0.5d0*pi*xloc)*cos(pi*yN)*cos(pi*zloc)
+               pS = -lambda*log(cosh(xloc/lambda) 
+     &              + epsilon*cos(yS/lambda)) 
+     &              + perturb*sin(0.5d0*pi*xloc)*cos(pi*yS)*cos(pi*zloc)
+
+c              use centered differences for magnetic field entries
+               Bx = -(pN - pS)/(2.d0*dy)
+               By =  (pE - pW)/(2.d0*dx)
+
 
 c              set total energy
                etot = press/(gamma-1.D0) + 0.5d0*(Bx*Bx+By*By)

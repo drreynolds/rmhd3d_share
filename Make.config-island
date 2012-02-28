@@ -1,0 +1,34 @@
+###################################################################
+#  Problem configuration Makefile
+#  Daniel R. Reynolds, SMU Mathematics
+###################################################################
+
+####### Compile-time problem definitions #######
+# Spatial Dimension:   
+#      1D: -DONE_D
+#      2D: -DTWO_D
+#    2.5D: -DTWO_D -DTWO_HALF_D
+#      3D:  <nothing>
+DIMENSION = 
+
+# CD vs. upwind:         -DUPWIND     (default is CD)
+# order of CD:  -DTCD (Tuned CD), -DCD4 (4th-order)  
+#            (default is 2nd-order, with TCD preferred over CD4)
+#            (TCD and CD4 need at least 2 ghost cells)
+#            (one of these CD methods is still used for the B field)
+# Zip-differencing:      -DZIP        (default is off)
+# Upwind formulation:    -DPRIMITIVE  (use inviscidfluxrp)
+#	                 -DROE	      (use inviscidfluxroe)
+#                        (default)    (use inviscidfluxlf)
+# Harten's entropy fix:  -DHARTEN     (default is off)
+DISCRETIZATION = 
+
+# parallel execution:    -DPARALLEL   (default is serial)
+# dynamic meshing:       -DDYNAMIC    (default is static)
+# Viscous fluxes:        -DNOVISCFLUX (default is on)
+EXTRADEFS = -DPARALLEL -DDYNAMIC
+
+# overall problem-specific preprocessor directives
+PROB_DEFS = $(DIMENSION) $(DISCRETIZATION) $(EXTRADEFS)
+
+####### End of Make.config #######
