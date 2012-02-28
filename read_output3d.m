@@ -73,9 +73,9 @@ for k=1:Nz
 	 buffer = fgetl(fin);
 	 
 	 % extract fields into appropriate output arrays
-	 [x(i), y(j), rho(i,j,k), u(i,j,k), v(i,j,k), w(i,j,k), Bx(i,j,k), ...
+	 [x(i), y(j), z(k), rho(i,j,k), u(i,j,k), v(i,j,k), w(i,j,k), Bx(i,j,k), ...
 	  By(i,j,k), Bz(i,j,k), p(i,j,k), divB(i,j,k), J(i,j,k), e(i,j,k)] ...
-          = strread(buffer,'%f %f %f %f %f %f %f %f %f %f %f %f %f');
+          = strread(buffer,'%f %f %f %f %f %f %f %f %f %f %f %f %f %f');
 	 
 	 % note: gnuplot output designed for 2D, so no z coordinate is saved
 	 z(k) = k;
