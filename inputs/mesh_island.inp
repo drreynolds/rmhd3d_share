@@ -1,0 +1,16 @@
+&meshsize
+  nx     = 64,
+  ny     = 64,
+  nz     = 64,
+  nghost = 3,
+&end
+&meshprocs
+  xprocs = 1,
+  yprocs = 1,
+  zprocs = 1,
+&end
+&bdryconds
+  xbc = 2,
+  ybc = 1,
+  zbc = 1,
+&end

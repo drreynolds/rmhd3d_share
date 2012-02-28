@@ -1,0 +1,13 @@
+&molwts
+  wmol = 1.d0,
+&end
+&gammas
+  gamma = 1.66666666666666667d0,
+&end
+&diffusiveproperties
+  mu        = 1.d-3,
+  eta       = 1.d-3,
+  etaFactor = 0.d0,
+  kappa     = 1.d-3,
+&end
+
