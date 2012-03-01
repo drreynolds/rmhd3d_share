@@ -53,6 +53,10 @@ c     Allocate directional meshpoints
 
 c     call the MHD driver routine
       call MHDDriver
+
+c     free space used by directional meshpoints
+      deallocate(xc,yc,zc)
+
       end
 c=================================================================
 
@@ -75,8 +79,13 @@ c      use tvdcoeffs
 
 c======= Declarations =========
       implicit none
-      double precision :: ux(IXLO:IXHI,IYLO:IYHI,IZLO:IZHI,nvar)
-      double precision :: phi(IXLO:IXHI,IYLO:IYHI)
+#ifdef DYNAMIC
+      double precision, allocatable :: ux(:,:,:,:)
+      double precision, allocatable :: phi(:,:,:)
+#else
+      double precision :: ux(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar)
+      double precision :: phi(ixlo:ixhi,iylo:iyhi,izlo:izhi)
+#endif
       double precision :: dt, ttot, tstop
       integer          :: istart, iter, maxiter, lastiter
       integer          :: output_flag, binary_flag
@@ -86,16 +95,22 @@ c======= Declarations =========
       integer          :: tvdFlag
       integer          :: timestep
 
-
-c======= Internals ============
-
 c     declare internal namelists for problem specification
       namelist /inparams/ maxiter, new, output_flag, binary_flag
       namelist /dumps/ ndump, ndiag
       namelist /gridbounds/ xl, xr, yl, yr, zl, zr
 
+
+c======= Internals ============
+
+c     if necessary, allocate local data arrays
+#ifdef DYNAMIC
+      allocate(ux(ixlo:ixhi,iylo:iyhi,izlo:izhi,1:nvar))
+      allocate(phi(ixlo:ixhi,iylo:iyhi,izlo:izhi))
+#endif      
+
 c     set up physical stopping time
-      tstop = 1.0d2
+      tstop = 6.5d0
 
 c     input general MHD simulation information using namelists
       open(16,file='mhd.inp',form='formatted')
@@ -163,8 +178,8 @@ c      call Timing
 c     Output initial state and start time stepping
       if(output_flag==1) then
          if(binary_flag==0) then
-c            call WriteGnuplotFile(ux,0)
-            call WriteAVSFile(ux,0)
+            call WriteGnuplotFile(ux,0)
+c            call WriteAVSFile(ux,0)
          endif
       endif
       do timeStep = istart,istart+maxiter-1,1
@@ -184,8 +199,8 @@ c        update time, periodically dump data
             if(output_flag == 1) then
                if(binary_flag == 0) then
 c                  call WriteTextFileParallel(ux,timeStep)
-c                  call WriteGnuplotFile(ux,timeStep)
-                  call WriteAVSFile(ux,timeStep)
+                  call WriteGnuplotFile(ux,timeStep)
+c                  call WriteAVSFile(ux,timeStep)
                else
                   call WriteBinaryFileParallel(ux,timeStep)
                endif
@@ -228,8 +243,8 @@ c     output final solution
       if(output_flag == 1) then
          if(binary_flag == 0) then
 c            call WriteTextFileParallel(ux,timeStep)
-c            call WriteGnuplotFile(ux,timeStep)
-            call WriteAVSFile(ux,timeStep)
+            call WriteGnuplotFile(ux,timeStep)
+c            call WriteAVSFile(ux,timeStep)
          else
             call WriteBinaryFileParallel(ux,timeStep)
          endif
@@ -240,6 +255,11 @@ c     dump all remaining data, output diagnostics, close I/O files
 
 c     stop timing information for speed check
 c      call Timing
+
+c     free up allocated memory
+#ifdef DYNAMIC
+      deallocate(ux,phi)
+#endif      
 
       return
       end
