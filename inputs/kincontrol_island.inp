@@ -1,6 +1,6 @@
 &kinsol_controls
   tstop       = 6.5d0,
-  dtfac       = 1.d-2,
+  dtfac       = 5.d-2,
   theta       = 0.5d0,
 
   useMyPrec   = 0,

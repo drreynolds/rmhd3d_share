@@ -1,5 +1,5 @@
 &island
-  lambda  = 1.59154943091895d-1,
+  lambda  = 0.159154943091895d0,
   epsilon = 2.d-1,
   p0      = 1.d0,
   perturb = 1.d-3,
