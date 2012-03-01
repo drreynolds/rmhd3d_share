@@ -1,6 +1,6 @@
 function [rho,u,v,w,Bx,By,Bz,p,divB,J,e,x,y,z] = read_output3d(fname,Nx,Ny,Nz)
 %
-% [rho,u,v,w,Bx,By,Bz,p,divB,J,e,x,y,z] = read_output(fname,Nx,Ny,Nz)
+% [rho,u,v,w,Bx,By,Bz,p,divB,J,e,x,y,z] = read_output3d(fname,Nx,Ny,Nz)
 %
 % Extracts 3D fields from gnuplot output file.
 %
