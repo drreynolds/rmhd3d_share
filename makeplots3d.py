@@ -15,16 +15,11 @@ nx, ny, nz, xprocs, yprocs, zprocs, xbc, ybc, zbc = mhd3d.load_mesh()
 Nt = times.size
 print 'printing ',Nt,' solution snapshots'
 
-# only print out ~10 snapshots of each field
-if (Nt/ndump > 10):
-    ndump *= 2
-if (Nt/ndump > 10):
-    ndump *= 2
-if (Nt/ndump > 10):
-    ndump *= 2
-
 # slice through the center of the domain (in z-direction)
 sl = int(nz/2)
+
+# slice through offset plane for Jz current (in x-direction)
+slx = int(nx/2); 
 
 # loop over snapshots, loading values and plotting
 for tstep in range(0,Nt,ndump):
@@ -106,7 +101,7 @@ for tstep in range(0,Nt,ndump):
         
     # Jcur contour
     figure()
-    s = j[sl,:,:]
+    s = j[slx,:,:]
     h = imshow(s, hold=False, extent=(zl, zr, xl, xr), origin='lower')
     colorbar(h, orientation='horizontal')
     title('Jcurrent, t = ' + repr(round(times[tstep],4)))
