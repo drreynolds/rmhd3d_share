@@ -4,6 +4,7 @@ syntax: glob
 *.o
 *~
 *.orig
+*.png
 output.0*
 Make.machine
 results
