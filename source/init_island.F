@@ -31,13 +31,13 @@ c     local variables
       integer          :: i,j,k
       double precision :: xloc, yloc, zloc, pi, den
       double precision :: lambda, epsilon, p0, perturb
-      double precision :: press, Bx, By, etot
+      double precision :: press, Bx, By, Bz, etot
       double precision :: pE, pW, pN, pS, xE, xW, yN, yS
 
       namelist /molwts/ wmol
       namelist /gammas/ gamma
       namelist /diffusiveproperties/ mu, eta, etaFactor, kappa
-      namelist /island/ lambda, epsilon, p0, perturb
+      namelist /island/ lambda, epsilon, p0, perturb, Bz
 
 c=======Internals=========
 
@@ -65,12 +65,13 @@ c     input island coalescence parameters
       read(17,island)
       close(17)
       if(iprocx==1 .and. iprocy==1 .and. iprocz==1) then
-         write(6,'(A,4(A,es12.5))') 
+         write(6,'(A,5(A,es12.5))') 
      &        '\nIsland Coalescence Properties:',
      &        '\n         lambda =',lambda,
      &        '\n        epsilon =',epsilon,
      &        '\n             p0 =',p0,
-     &        '\n        perturb =',perturb
+     &        '\n        perturb =',perturb,
+     &        '\n             Bz =',Bz
       end if
 
 
@@ -137,13 +138,13 @@ c              use centered differences for magnetic field entries
                Bx = -(pN - pS)/(2.d0*dy)
                By =  (pE - pW)/(2.d0*dx)
 
-
 c              set total energy
-               etot = press/(gamma-1.D0) + 0.5d0*(Bx*Bx+By*By)
+               etot = press/(gamma-1.D0) + 0.5d0*(Bx*Bx+By*By+Bz*Bz)
 
 c              store values
                ux(i,j,k,5) = Bx
                ux(i,j,k,6) = By
+               ux(i,j,k,7) = Bz
                ux(i,j,k,8) = etot
 
             enddo
