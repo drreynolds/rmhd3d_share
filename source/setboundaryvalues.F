@@ -12,11 +12,21 @@ c-----------------------------------------------------------------
 
       subroutine SetBoundaryValues(u)
 c-----------------------------------------------------------------
-c     Description: Boundary conditions for the reconnection
-c                  problem. Conducting wall and no mass
-c                  flux. It is acceptable to have slip
-c                  velocity boundary conditions even for
-c                  non-zero viscosity. 
+c     Description: Boundary conditions enforcement routine.  Since
+c       boundary conditions are enforced at the outer faces of the
+c       domain, but values are stored at cell centers, all
+c       conditions are enforced through manipulation of ghost zone
+c       entries. 
+c     
+c     Types of boundary conditions:
+c       Periodic -- this routine only enforces periodic BCs in 
+c                   non-parallel directions.
+c       Reflecting -- homogeneous Neumann BCs for the density, 
+c                   tangential velocity, tangential magnetic field 
+c                   and total energy;  homogeneous Dirichlet BCs 
+c                   for the normal velocity and magnetic field.
+c       Zero Gradient -- homogeneous Neumann for all fields
+c
 c     Input: u - conserved variables at cell centers
 c     Output: Ghost values of u at physical boundaries are 
 c             over-written
@@ -26,10 +36,9 @@ c-----------------------------------------------------------------
       use boundary_conds
       double precision:: u(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar)
       integer i,j,k,l,n
-c
-c       
+
 c X-Boundary Conditions are performed for all problems
-c
+
       if (xbc == BCperiodic) then
 c     x-periodic: only set values in single-processor case
 c	 xl Boundary
