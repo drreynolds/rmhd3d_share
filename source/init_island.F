@@ -99,8 +99,8 @@ c     iterate over the domain to set up x-velocity
                xE = xloc + dx
 
 c              set pressure 
-               press = p0 + (1-epsilon**2)/2.d0*(cosh(xloc/lambda) 
-     &                       + epsilon*cos(yloc/lambda))**(-2)
+               press = p0 + (1-epsilon**2)/2.d0/(cosh(xloc/lambda) 
+     &                       + epsilon*cos(yloc/lambda))**2
 
 
 ccccc Analytical approach for initial conditions (more accurate) ccccc
