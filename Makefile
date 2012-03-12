@@ -41,6 +41,9 @@ KINSRC = impRMHD_interface impRMHD_driver nvector_mhd fnvector_mhd
 # executables using CVODE depend on these
 CVSRC = impCVODE_interface impCVODE_driver nvector_mhd fnvector_mhd
 
+# executables using PETSc depend on these
+PETSCSRC = petsc_interface petsc_driver
+
 # header files (for dependency check when recompiling)
 HEADS = nvector_mhd.h mesh.h mesh_common.h mesh_parms.h  \
         mesh_parms_static.h mesh_uparms.h properties.h   \
@@ -95,6 +98,10 @@ OBJ13 = $(addprefix source/, $(addsuffix .o, $(SRC13)))
 SRC14 = $(ALLSRC) $(VISCSRC) $(CVSRC) init_island
 OBJ14 = $(addprefix source/, $(addsuffix .o, $(SRC14)))
 
+# petsc_island source files and corresp. object files
+SRC15 = $(ALLSRC) $(VISCSRC) $(PETSCSRC) init_island
+OBJ15 = $(addprefix source/, $(addsuffix .o, $(SRC15)))
+
 # fnvec_mhd_test source files and corresp. object files
 FNVEC_TEST_SRC = source/modules source/nvector_mhd source/fnvector_mhd \
                  tests/test_nvec_mhd tests/test_fnvec_mhd 
@@ -112,7 +119,7 @@ CVODE_LIBS  = -lsundials_fcvode -lsundials_cvode
 KINSOL_LIBS = -lsundials_fkinsol -lsundials_kinsol
 
 # Final usable variables
-INCS    = -Iinclude ${MPI_INCD} ${SUND_INCD} ${C_INCD}
+INCS    = -Iinclude ${MPI_INCD} ${SUND_INCD} ${C_INCD} ${PETSC_INCD}
 KLIBS   = ${SUND_LIBD} ${KINSOL_LIBS} ${SUND_LIBS} ${MPI_LIBD} ${MPI_LIBS}
 CVLIBS  = ${SUND_LIBD} ${CVODE_LIBS} ${SUND_LIBS} ${MPI_LIBD} ${MPI_LIBS}
 KLIBSH   = ${SUND_LIBD} ${KINSOL_LIBS} ${SUND_LIBS} ${MPI_LIBD} ${MPI_LIBS}
@@ -149,6 +156,7 @@ help :
 	@echo "     exp_island        [explicit, fixed dt]"
 	@echo "     kin_island        [KINSOL, fixed dt]"
 	@echo "     cv_island         [CVODE, variable dt]"
+	@echo "     petsc_island      [PETSc]"
 	@echo " "
 	@echo "  Code Tests:"
 	@echo "     fnvec_mhd_test    [checks F90/C vector kernel interface]"
@@ -213,6 +221,9 @@ kin_island : ${HEADERS} ${OBJ13}
 
 cv_island : ${HEADERS} ${OBJ14}
 	${F90} ${FFLAGS_} -o $@ ${OBJ14} ${INCS} ${CVLIBS} 
+
+petsc_island : ${HEADERS} ${OBJ15}
+	${F90} ${FFLAGS_} -o $@ ${OBJ15} ${INCS} ${PETSC_LIBS}
 
 fnvec_mhd_test : ${HEADERS} ${FNVEC_TEST_OBJ}
 	${F90} ${FFLAGS_} -o $@ ${FNVEC_TEST_OBJ} ${INCS} ${KLIBS}

@@ -1,0 +1,24 @@
+# -*- mode:conf -*-
+# PETSc command line options, run with -help for more details
+
+-ts_final_time 1
+-ts_type rosw
+-ts_rosw_type ra34pw2
+
+# absolute and relative tolerance for adaptive controller
+-ts_adapt_type basic            # use "none" to disable adaptivity
+-ts_atol 1e-4                   # absolute tolerance
+-ts_rtol 1e-4                   # relative tolerance
+-ts_dt 0.05                     # initial time step
+-ts_adapt_monitor               # monitors step size, local truncation error, and decisions
+
+# nonlinear solver configuration, note that Rosenbrock-W only need one linear solve per stage
+-snes_mf                        # Matrix-free finite-difference
+
+# linear solver configuration
+-ksp_converged_reason           # iteration count and reason for convergence on each iteration
+#-ksp_monitor                    # monitor linear residuals on each iteration
+
+# Diagnostics written to files after the solve
+-ts_view petsc-ts.log
+-log_summary petsc-perf.log

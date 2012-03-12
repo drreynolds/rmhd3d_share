@@ -1,0 +1,832 @@
+c -*- Mode: Fortran; -*-
+c-----------------------------------------------------------------------
+c     Ravi Samtaney
+c     KAUST, Mechanical Engineering
+c
+c     Daniel R. Reynolds
+c     SMU, Mathematics
+c
+c     Copyright 2004
+c     All Rights Reserved
+c=======================================================================
+
+      module petsc_data
+c-----------------------------------------------------------------
+c     Description: holds necessary timelevel data for nonlinear
+c        function evaluation
+c
+c     Contains the internal variables:
+c           vv - primitive variables
+c         *inv - hyperbolic fluxes
+c         *vis - parabolic fluxes
+c         dudx - velocity gradient 
+c         dbdx - magnetic field gradient 
+c-----------------------------------------------------------------
+      use mesh_parms
+
+      implicit none
+      save
+      
+      logical :: outnode
+      integer :: binary_flag, ndump, output_flag, ndiag
+#ifdef DYNAMIC
+      double precision, dimension(:,:,:), allocatable ::
+     &     phi
+      double precision, dimension(:,:,:,:), allocatable ::
+     &     ulocal, vv, finv, fvis, ginv, gvis, hinv, hvis
+      double precision, dimension(:,:,:,:,:), allocatable ::
+     &     dudx, dbdx
+
+#else
+      double precision :: phi(ixlo:ixhi,iylo:iyhi,izlo:izhi)
+      double precision, dimension(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar)
+     &     :: ulocal, vv, finv
+#ifndef NOVISCFLUX
+      double precision :: fvis(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar)
+#endif
+#ifndef ONE_D
+      double precision :: ginv(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar)
+#ifndef NOVISCFLUX
+      double precision :: gvis(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar)
+#endif
+#ifndef TWO_D
+      double precision :: hinv(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar)
+#ifndef NOVISCFLUX
+      double precision :: hvis(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar)
+#endif
+#endif
+#endif
+
+#ifndef NOVISCFLUX
+      double precision, dimension(ixlo:ixhi,iylo:iyhi,izlo:izhi,3,3)
+     &     :: dudx, dbdx
+#endif
+#endif
+
+      end module petsc_data
+
+      module rmhd3_petsc
+      interface TSMonitor_RMHD3
+      subroutine TSMonitor_RMHD3(ts,step,time,uvec,dummy,ierr)
+#include <finclude/petscsys.h>
+#include <finclude/petscvec.h>
+#include <finclude/petscts.h>
+      TS :: ts
+      PetscReal :: step,time
+      Vec :: uvec
+      PetscObject :: dummy
+      PetscErrorCode :: ierr
+      end subroutine TSMonitor_RMHD3
+      end interface TSMonitor_RMHD3
+      interface TSRHSFunction_RMHD3
+      subroutine TSRHSFunction_RMHD3(ts,time,uvec,fvec,dummy,ierr)
+#include <finclude/petscsys.h>
+#include <finclude/petscvec.h>
+#include <finclude/petscts.h>
+      TS :: ts
+      PetscReal :: time
+      Vec :: uvec,fvec
+      PetscObject :: dummy
+      PetscErrorCode :: ierr
+      end subroutine TSRHSFunction_RMHD3
+      end interface TSRHSFunction_RMHD3
+      end module rmhd3_petsc
+c=================================================================
+
+
+
+
+      subroutine TSRHSFunction_RMHD3(ts, t, uvec, fvec, user, ierr)
+c-----------------------------------------------------------------------
+c     Description: TSRHSFunction_RMHD3 provides the right hand side function for the 
+c        ode:     du/dt = fdot(u,t)
+c        for the current formulation of our pde in conservation form, 
+c        we have  du/dt = div(f(u)),  where f is the (nonlinear) flux.
+c
+c     arguments:
+c          ts - time stepping context
+c           t - (dbl, input) current time
+c        uvec - (vec, input) fluid variables at current time
+c        fvec - (vec, output) right-hand side function
+c        user - optional user context, unused because we use f90 module
+c        ierr - return code
+c
+c     note: all of the data required to evaluate the system function, is
+c        handled through fortran modules. it could also be passed
+c        through the user argument.
+c-----------------------------------------------------------------------
+c======= inclusions ===========
+      use mesh
+      use profiling
+      use petsc_data
+
+c======= declarations =========
+      implicit none
+#include <finclude/petscsys.h>
+#include <finclude/petscvec.h>
+#include <finclude/petscmat.h>
+#include <finclude/petscsnes.h>
+#include <finclude/petscts.h>
+#include <finclude/petscvec.h90>
+
+c     calling variables
+      TS ts
+      Vec uvec,fvec
+      PetscScalar,pointer :: uarr(:),farr(:)
+      PetscObject user
+      double precision :: t
+      PetscInt         :: i, j, k, l
+      PetscErrorCode ierr
+
+
+c======= Internals ============
+
+c     exchange ghost values and set the boundary conditions
+      call VecGetArrayF90(uvec,uarr,ierr)
+      CHKERRQ(ierr)
+      call VecGetArrayF90(fvec,farr,ierr)
+      CHKERRQ(ierr)
+      call GlobalToLocal(uarr,ulocal)
+      call CommState(ulocal)
+
+c     start the RHS profiler 
+      call prof_start(2)
+
+c     get the negative divergence of the flux at the new state uu
+      call divFlux(ulocal,farr)
+
+c     stop the RHS profiler 
+      call prof_stop(2)
+
+      call VecRestoreArrayF90(uvec,uarr,ierr)
+      CHKERRQ(ierr)
+      call VecRestoreArrayF90(fvec,farr,ierr)
+      CHKERRQ(ierr)
+      
+      return
+      end subroutine TSRHSFunction_RMHD3
+c=======================================================================
+
+
+      subroutine TSMonitor_RMHD3(ts,timeStep,time,uvec,dummy,ierr)
+      use petsc_data
+      use iounits
+      use profiling
+      implicit none
+#include <finclude/petscsys.h>
+#include <finclude/petscvec.h>
+#include <finclude/petscdmda.h>
+#include <finclude/petscmat.h>
+#include <finclude/petscksp.h>
+#include <finclude/petscpc.h>
+#include <finclude/petscsnes.h>
+#include <finclude/petscts.h>
+#include <finclude/petscvec.h90>
+      TS ts
+      PetscInt timeStep
+      PetscObject dummy
+      PetscReal time
+      Vec      uvec
+      PetscErrorCode ierr
+      PetscScalar,pointer :: uarr(:)
+      PetscReal dt,dtexp
+
+      call prof_start(6)
+
+      call TSGetTimeStep(ts,dt,ierr)
+
+c     Update ghost values. They will normally already be updated.
+      call VecGetArrayF90(uvec,uarr,ierr)
+      call GlobalToLocal(uarr,ulocal)
+      call VecRestoreArrayF90(uvec,uarr,ierr)
+
+c     compute explicit time step
+      call newdt(dtexp,ulocal)
+      if(outnode) then
+         write(6,*) 'Explicit time step =', dtexp
+      endif
+
+c     periodically dump data
+      if(mod(timeStep,ndump)==0) then
+         if(output_flag==1) then
+            if(binary_flag==0) then
+               call WriteGnuplotFile(ulocal,timeStep)
+            else
+               call WriteBinaryFileParallel(ulocal,timeStep)
+            endif
+         endif
+         if (output_flag==2) then
+c     dump restart information only
+            if(outnode) then
+               open(itime,file='time.txt',form='formatted')
+               write(itime,*) timeStep
+               write(itime,*) time
+               write(itime,*) timestep-1
+               close(itime)
+            endif
+            call DumpOutFluidParallel(ulocal,phi)
+         endif
+      endif
+
+c     periodically output diagnostic information
+      if(mod(timeStep,ndiag)==0) then
+         call Diagnostics(ulocal,phi,time)
+      endif
+      call prof_stop(6)
+      end subroutine TSMonitor_RMHD3
+c=======================================================================
+
+      subroutine GlobalToLocal(uglobal,ulocal)
+c     Map global state to local state (which includes ghost values)
+      use mesh
+      use mesh_parms
+      use mpistuff
+      implicit none
+      PetscInt :: i,j,k,l
+      double precision :: uglobal(nxlocal,nylocal,nzlocal,nvar)
+      double precision :: ulocal(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar)
+c     copy the global state into the local state
+      do l=1,nvar
+         do k=1,nzlocal
+            do j=1,nylocal
+               do i=1,nxlocal
+                  ulocal(i,j,k,l) = uglobal(i,j,k,l)
+               end do
+            end do
+         end do
+      end do
+      call CommState(ulocal)
+      end subroutine GlobalToLocal
+
+      subroutine LocalToGlobal(ulocal,uglobal)
+c     Map local state (includes ghost values) to global state
+      use mesh
+      use mesh_parms
+      use mpistuff
+      implicit none
+      PetscInt :: i,j,k,l
+      double precision :: uglobal(nxlocal,nylocal,nzlocal,nvar)
+      double precision :: ulocal(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar)
+c     copy the global state into the local state
+      do l=1,nvar
+         do k=1,nzlocal
+            do j=1,nylocal
+               do i=1,nxlocal
+                  uglobal(i,j,k,l) = ulocal(i,j,k,l)
+               end do
+            end do
+         end do
+      end do
+      end subroutine LocalToGlobal
+
+      subroutine CommState(uu)
+c-----------------------------------------------------------------------
+c     Description: CommState updates the ghost values in-place.
+c
+c     Argument:
+c           uu - (dbl(*), input) current fluid variables
+c-----------------------------------------------------------------------
+c======= Inclusions ===========
+      use mesh
+#ifdef PARALLEL
+      use mpistuff
+#endif
+      use profiling
+
+c======= Declarations =========
+      implicit none
+      PetscInt :: i,j,k,l
+      double precision :: uu(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar)
+
+
+c======= Internals ============
+
+c     start the communication profiler
+      call prof_start(3)
+
+c     do the communications
+      call mesh_update_bdry_async(uu,nvar)
+      call SetBoundaryValues(uu)
+
+c     wait for all processes to catch up
+#ifdef PARALLEL
+      call mpi_barrier(comm3d, ierr)
+#endif
+
+c     stop the communication profiler
+      call prof_stop(3)
+
+      return
+      end subroutine CommState
+c=================================================================
+
+
+
+      subroutine RMHD3PetscInitialize
+c-----------------------------------------------------------------------
+c     Description: RMHD3PetscInitialize allocates work vectors and initializes PETSc.
+
+c-------------------------------------------------------------------
+c======= Inclusions ===========
+      use mesh
+      use mesh_common
+      use boundary_conds
+      use sundials_fcmix
+      use petsc_data
+
+c======= Declarations =========
+      implicit none
+#include <finclude/petscsys.h>
+      double precision :: uu(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar)
+      double precision :: ttot
+      double precision :: abstol(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar)
+      double precision :: tstop, dtfac, ropt(40)
+      integer          :: taskchoice
+      PetscErrorCode   :: ierr
+
+c======= Internals ============
+
+c     if using dynamic meshing, allocate work space for PETSc function evaluation
+#ifdef DYNAMIC
+      allocate(   phi(ixlo:ixhi,iylo:iyhi,izlo:izhi))
+      allocate(ulocal(ixlo:ixhi,iylo:iyhi,izlo:izhi,1:nvar))
+      allocate(    vv(ixlo:ixhi,iylo:iyhi,izlo:izhi,1:nvar))
+      allocate(  finv(ixlo:ixhi,iylo:iyhi,izlo:izhi,1:nvar))
+#ifndef NOVISCFLUX
+      allocate(  fvis(ixlo:ixhi,iylo:iyhi,izlo:izhi,1:nvar))
+      allocate(  dudx(ixlo:ixhi,iylo:iyhi,izlo:izhi,3,3))
+      allocate(  dbdx(ixlo:ixhi,iylo:iyhi,izlo:izhi,3,3))
+#endif
+#ifndef ONE_D
+      allocate(  ginv(ixlo:ixhi,iylo:iyhi,izlo:izhi,1:nvar))
+#ifndef NOVISCFLUX
+      allocate(  gvis(ixlo:ixhi,iylo:iyhi,izlo:izhi,1:nvar))
+#endif
+#ifndef TWO_D
+      allocate(  hinv(ixlo:ixhi,iylo:iyhi,izlo:izhi,1:nvar))
+#ifndef NOVISCFLUX
+      allocate(  hvis(ixlo:ixhi,iylo:iyhi,izlo:izhi,1:nvar))
+#endif
+#endif
+#endif
+#endif
+
+      call PetscInitialize('petsccontrol.inp',ierr)
+
+      return
+      end subroutine RMHD3PetscInitialize
+c=================================================================
+
+
+      subroutine RMHD3PetscFinalize()
+c-----------------------------------------------------------------------
+c     Description: RMHD3PetscFinalize deallocates all dynamic solver memory.
+c-------------------------------------------------------------------
+c======= Inclusions ===========
+      use petsc_data
+
+c======= Declarations =========
+      implicit none
+      PetscErrorCode ierr
+
+c======= Internals ============
+
+
+c     free PETSc internal data
+      call PetscFinalize(ierr)
+
+c     if using dynamic meshing, deallocate petsc_data structures
+#ifdef DYNAMIC
+      deallocate(ulocal,vv,finv)
+#ifndef NOVISCFLUX
+      deallocate(fvis,dudx,dbdx)
+#endif
+#ifndef ONE_D
+      deallocate(ginv)
+#ifndef NOVISCFLUX
+      deallocate(gvis)
+#endif
+#ifndef TWO_D
+      deallocate(hinv)
+#ifndef NOVISCFLUX
+      deallocate(hvis)
+#endif
+#endif
+#endif
+#endif
+
+      return
+      end subroutine RMHD3PetscFinalize
+c=================================================================
+
+
+      subroutine divFlux(uu,dFlux)
+c-----------------------------------------------------------------------
+c     Description: divFlux provides a centered-difference spatial 
+c        approximation to the negative divergence of the flux for the 
+c        conservation equation describing the nonlinearly-resistive,
+c        ideal MHD system.
+c
+c     Arguments:
+c           uu - (dbl(*), input) fluid variables at current time
+c        dFlux - (dbl(*), output) divergence of the flux
+c-----------------------------------------------------------------------
+c======= Inclusions ===========
+      use mesh
+      use properties
+      use petsc_data
+
+c======= Declarations =========
+      implicit none
+
+c     calling variables
+      double precision, dimension(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar) 
+     &     :: uu
+      double precision, dimension(nxlocal,nylocal,nzlocal,nvar)
+     &     :: dFlux
+
+c     differencing factors
+      double precision :: xfac, yfac, zfac, dt
+
+c     indexes for flux calculations
+      integer :: indx, indy, indz, i, j, k, l, m
+      
+
+
+c======= Internals ============
+
+
+c     set differencing factors
+      xfac = 1.0d0/dx;  yfac = 1.0d0/dy;  zfac = 1.0d0/dz
+
+c     set dt value (unused, but passed to flux routines anyway)
+      dt = 0.0d0
+
+c     construct the vector of primitive variables
+      call ConservedToPrimitive(uu,vv)
+
+
+c     zero the fluxes (necessary???)
+      finv = 0.0d0
+#ifndef ONE_D
+      ginv = 0.0d0
+#ifndef TWO_D
+      hinv = 0.0d0
+#endif
+#endif
+#ifndef NOVISCFLUX
+      fvis = 0.0d0
+#ifndef ONE_D
+      gvis = 0.0d0
+#ifndef TWO_D
+      hvis = 0.0d0
+#endif
+#endif
+#endif
+
+
+c     get the viscous flux requirements dudx and dbdx
+#ifndef NOVISCFLUX
+      do m=1,3,1
+         dudx(:,:,:,1,m) = vv(:,:,:,m+1)
+         dbdx(:,:,:,1,m) = vv(:,:,:,m+4)
+         dudx(:,:,:,2,m) = 0.d0
+         dbdx(:,:,:,2,m) = 0.d0
+         dudx(:,:,:,3,m) = 0.d0
+         dbdx(:,:,:,3,m) = 0.d0
+      end do
+      call GradientVector(dudx)
+      call GradientVector(dbdx)
+#endif
+
+
+c------------ x-directional fluxes ------------
+c     Hyperbolic fluxes
+      inlo = ixlo;  inhi = ixhi
+#ifdef UPWIND
+#ifdef PRIMITIVE
+c        using upwind with eigensystem from primitive variables
+      call InviscidFluxRP(finv,vv,1,dt)
+#elif  ROE
+c        using upwind with eigensystem from conservative variables
+      call InviscidFluxRoe(finv,vv,1,dt)
+#else
+c        using upwind with Lax-Friedrichs scheme
+      call InviscidFluxLF(finv,vv,1,dt)
+#endif
+#else
+c        using centered-differences (of some form)
+#ifdef TCD
+c        2nd-order tuned central differences
+      call InviscidFluxTCD(finv,vv,1,dt)
+#elif CD4
+c        4th-order standard central differences
+      call InviscidFluxCD4(finv,vv,1,dt)
+#else
+c        2nd-order standard central differences
+      call InviscidFluxCD2(finv,vv,1,dt)
+#endif
+#endif
+
+c     Parabolic fluxes
+      inlo = ixlo;  inhi = ixhi
+      indx = 1;  indy = 0;  indz = 0
+#ifndef NOVISCFLUX
+#ifdef TCD
+c        2nd-order tuned central differences
+      call ViscousFluxTCD(fvis,vv,dudx,dbdx,1,dt,indx,indy,indz)
+#elif CD4
+c        4th-order standard central differences
+      call ViscousFluxCD4(fvis,vv,dudx,dbdx,1,dt,indx,indy,indz)
+#else
+c        2nd-order standard central differences
+      call ViscousFluxCD2(fvis,vv,dudx,dbdx,1,dt,indx,indy,indz)
+#endif
+#endif
+
+
+c------------ y-directional fluxes ------------
+#ifndef ONE_D
+c     Hyperbolic fluxes
+      inlo = iylo;  inhi = iyhi
+#ifdef UPWIND
+#ifdef PRIMITIVE
+c        using upwind with eigensystem from primitive variables
+      call InviscidFluxRP(ginv,vv,2,dt)
+#elif  ROE
+c        using upwind with eigensystem from conservative variables
+      call InviscidFluxRoe(ginv,vv,2,dt)
+#else
+c        using upwind with Lax-Friedrichs scheme
+      call InviscidFluxLF(ginv,vv,2,dt)
+#endif
+#else
+c        using centered-differences (of some form)
+#ifdef TCD
+c        2nd-order tuned central differences
+      call InviscidFluxTCD(ginv,vv,2,dt)
+#elif CD4
+c        4th-order standard central differences
+      call InviscidFluxCD4(ginv,vv,2,dt)
+#else
+c        2nd-order standard central differences
+      call InviscidFluxCD2(ginv,vv,2,dt)
+#endif
+#endif
+
+c     Parabolic fluxes
+      inlo = iylo;  inhi = iyhi
+      indx = 0;  indy = 1;  indz = 0
+#ifndef NOVISCFLUX
+#ifdef TCD
+c        2nd-order tuned central differences
+      call ViscousFluxTCD(gvis,vv,dudx,dbdx,2,dt,indx,indy,indz)
+#elif CD4
+c        4th-order standard central differences
+      call ViscousFluxCD4(gvis,vv,dudx,dbdx,2,dt,indx,indy,indz)
+#else
+c        2nd-order standard central differences
+      call ViscousFluxCD2(gvis,vv,dudx,dbdx,2,dt,indx,indy,indz)
+#endif
+#endif
+
+
+c------------ z-directional fluxes ------------
+#ifndef TWO_D
+c     Hyperbolic fluxes
+      inlo = izlo;  inhi = izhi
+#ifdef UPWIND
+#ifdef PRIMITIVE
+c     using upwind with eigensystem from primitive variables
+      call InviscidFluxRP(hinv,vv,3,dt)
+#elif  ROE
+c     using upwind with eigensystem from conservative variables
+      call InviscidFluxRoe(hinv,vv,3,dt)
+#else
+c        using upwind with Lax-Friedrichs scheme
+      call InviscidFluxLF(hinv,vv,3,dt)
+#endif
+#else
+c     using centered-differences (of some form)
+#ifdef TCD
+c        2nd-order tuned central differences
+      call InviscidFluxTCD(hinv,vv,3,dt)
+#elif CD4
+c        4th-order standard central differences
+      call InviscidFluxCD4(hinv,vv,3,dt)
+#else
+c        2nd-order standard central differences
+      call InviscidFluxCD2(hinv,vv,3,dt)
+#endif
+#endif
+
+c     Parabolic fluxes
+      inlo = izlo;  inhi = izhi
+      indx = 0;  indy = 0;  indz = 1
+#ifndef NOVISCFLUX
+#ifdef TCD
+c        2nd-order tuned central differences
+      call ViscousFluxTCD(hvis,vv,dudx,dbdx,3,dt,indx,indy,indz)
+#elif CD4
+c        4th-order standard central differences
+      call ViscousFluxCD4(hvis,vv,dudx,dbdx,3,dt,indx,indy,indz)
+#else
+c        2nd-order standard central differences
+      call ViscousFluxCD2(hvis,vv,dudx,dbdx,3,dt,indx,indy,indz)
+#endif
+#endif
+#endif
+#endif
+
+
+c------------ construction of div(flux) ------------
+c
+c     Density
+      do k=1,nzlocal,1
+         do j=1,nylocal,1
+            do i=1,nxlocal,1
+               dFlux(i,j,k,1) = -xfac*(finv(i,j,k,1) - finv(i-1,j,k,1))
+#ifndef ONE_D
+     &              -yfac*( ginv(i,j,k,1) - ginv(i,j-1,k,1) )
+#ifndef TWO_D
+     &              -zfac*( hinv(i,j,k,1) - hinv(i,j,k-1,1) )
+#endif
+#endif
+            end do
+         end do
+      end do
+c
+c     X-Momentum
+      do k=1,nzlocal,1
+         do j=1,nylocal,1
+            do i=1,nxlocal,1
+               dFlux(i,j,k,2) = -xfac*(finv(i,j,k,2) - finv(i-1,j,k,2))
+#ifndef NOVISCFLUX
+     &              +xfac*( fvis(i,j,k,2) - fvis(i-1,j,k,2) )
+#endif
+#ifndef ONE_D
+     &              -yfac*( ginv(i,j,k,4) - ginv(i,j-1,k,4) )
+#ifndef NOVISCFLUX
+     &              +yfac*( gvis(i,j,k,4) - gvis(i,j-1,k,4) )
+#endif
+#ifndef TWO_D
+     &              -zfac*( hinv(i,j,k,3) - hinv(i,j,k-1,3) )
+#ifndef NOVISCFLUX
+     &              +zfac*( hvis(i,j,k,3) - hvis(i,j,k-1,3) )
+#endif
+#endif
+#endif
+            end do
+         end do
+      end do
+c
+c     Y-Momentum
+      do k=1,nzlocal,1
+         do j=1,nylocal,1
+            do i=1,nxlocal,1
+               dFlux(i,j,k,3) = -xfac*(finv(i,j,k,3) - finv(i-1,j,k,3))
+#ifndef NOVISCFLUX
+     &              +xfac*( fvis(i,j,k,3) - fvis(i-1,j,k,3) )
+#endif
+#ifndef ONE_D
+     &              -yfac*( ginv(i,j,k,2) - ginv(i,j-1,k,2) )
+#ifndef NOVISCFLUX
+     &              +yfac*( gvis(i,j,k,2) - gvis(i,j-1,k,2) )
+#endif
+#ifndef TWO_D
+     &              -zfac*( hinv(i,j,k,4) - hinv(i,j,k-1,4) )
+#ifndef NOVISCFLUX
+     &              +zfac*( hvis(i,j,k,4) - hvis(i,j,k-1,4) )
+#endif
+#endif
+#endif
+            end do
+         end do
+      end do
+c
+c     Z-Momentum
+      do k=1,nzlocal,1
+         do j=1,nylocal,1
+            do i=1,nxlocal,1
+               dFlux(i,j,k,4) = -xfac*(finv(i,j,k,4) - finv(i-1,j,k,4))
+#ifndef NOVISCFLUX
+     &              +xfac*( fvis(i,j,k,4) - fvis(i-1,j,k,4) )
+#endif
+#ifndef ONE_D
+     &              -yfac*( ginv(i,j,k,3) - ginv(i,j-1,k,3) )
+#ifndef NOVISCFLUX
+     &              +yfac*( gvis(i,j,k,3) - gvis(i,j-1,k,3) )
+#endif
+#ifndef TWO_D
+     &              -zfac*( hinv(i,j,k,2) - hinv(i,j,k-1,2) )
+#ifndef NOVISCFLUX
+     &              +zfac*( hvis(i,j,k,2) - hvis(i,j,k-1,2) )
+#endif
+#endif
+#endif
+            end do
+         end do
+      end do
+c
+c     X-Magnetic field
+      do k=1,nzlocal,1
+         do j=1,nylocal,1
+            do i=1,nxlocal,1
+               dFlux(i,j,k,5) = -xfac*(finv(i,j,k,5) - finv(i-1,j,k,5))
+#ifndef NOVISCFLUX
+     &              +xfac*( fvis(i,j,k,5) - fvis(i-1,j,k,5) )
+#endif
+#ifndef ONE_D
+     &              -yfac*( ginv(i,j,k,7) - ginv(i,j-1,k,7) )
+#ifndef NOVISCFLUX
+     &              +yfac*( gvis(i,j,k,7) - gvis(i,j-1,k,7) )
+#endif
+#ifndef TWO_D
+     &              -zfac*( hinv(i,j,k,6) - hinv(i,j,k-1,6) )
+#ifndef NOVISCFLUX
+     &              +zfac*( hvis(i,j,k,6) - hvis(i,j,k-1,6) )
+#endif
+#endif
+#endif
+            end do
+         end do
+      end do
+c
+c     Y-Magnetic field
+      do k=1,nzlocal,1
+         do j=1,nylocal,1
+            do i=1,nxlocal,1
+               dFlux(i,j,k,6) = -xfac*(finv(i,j,k,6) - finv(i-1,j,k,6))
+#ifndef NOVISCFLUX
+     &              +xfac*( fvis(i,j,k,6) - fvis(i-1,j,k,6) )
+#endif
+#ifndef ONE_D
+     &              -yfac*( ginv(i,j,k,5) - ginv(i,j-1,k,5) )
+#ifndef NOVISCFLUX
+     &              +yfac*( gvis(i,j,k,5) - gvis(i,j-1,k,5) )
+#endif
+#ifndef TWO_D
+     &              -zfac*( hinv(i,j,k,7) - hinv(i,j,k-1,7) )
+#ifndef NOVISCFLUX
+     &              +zfac*( hvis(i,j,k,7) - hvis(i,j,k-1,7) )
+#endif
+#endif
+#endif
+            end do
+         end do
+      end do
+c
+c     Z-Magnetic field
+      do k=1,nzlocal,1
+         do j=1,nylocal,1
+            do i=1,nxlocal,1
+               dFlux(i,j,k,7) = -xfac*(finv(i,j,k,7) - finv(i-1,j,k,7))
+#ifndef NOVISCFLUX
+     &              +xfac*( fvis(i,j,k,7) - fvis(i-1,j,k,7) )
+#endif
+#ifndef ONE_D
+     &              -yfac*( ginv(i,j,k,6) - ginv(i,j-1,k,6) )
+#ifndef NOVISCFLUX
+     &              +yfac*( gvis(i,j,k,6) - gvis(i,j-1,k,6) )
+#endif
+#ifndef TWO_D
+     &              -zfac*( hinv(i,j,k,5) - hinv(i,j,k-1,5) )
+#ifndef NOVISCFLUX
+     &              +zfac*( hvis(i,j,k,5) - hvis(i,j,k-1,5) )
+#endif
+#endif
+#endif
+            end do
+         end do
+      end do
+c
+c     Energy
+      do k=1,nzlocal,1
+         do j=1,nylocal,1
+            do i=1,nxlocal,1
+               dFlux(i,j,k,8) = -xfac*(finv(i,j,k,8) - finv(i-1,j,k,8))
+#ifndef NOVISCFLUX
+     &              +xfac*( fvis(i,j,k,8) - fvis(i-1,j,k,8) )
+#endif
+#ifndef ONE_D
+     &              -yfac*( ginv(i,j,k,8) - ginv(i,j-1,k,8) )
+#ifndef NOVISCFLUX
+     &              +yfac*( gvis(i,j,k,8) - gvis(i,j-1,k,8) )
+#endif
+#ifndef TWO_D
+     &              -zfac*( hinv(i,j,k,8) - hinv(i,j,k-1,8) )
+#ifndef NOVISCFLUX
+     &              +zfac*( hvis(i,j,k,8) - hvis(i,j,k-1,8) )
+#endif
+#endif
+#endif
+            end do
+         end do
+      end do
+c
+c
+
+
+      return
+      end subroutine divFlux
+c=======================================================================
