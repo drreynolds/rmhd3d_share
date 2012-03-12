@@ -214,19 +214,6 @@ c     view TS configuration before starting stepping
       call TSView(ts,PETSC_NULL_OBJECT,ierr)
       CHKERRQ(ierr)
 
-c     output initial state and diagnostics (energies, mass, etc)
-c        start the diags & I/O profiler
-      call prof_start(6)
-      if (output_flag.eq.1) then
-         if (binary_flag.eq.0) then
-            call WriteGnuplotFile(ulocal,0)
-         endif
-      endif
-c     Root node outputs progress
-      call Diagnostics(ulocal,phi,ttot)
-c        stop the diags & I/O profiler
-      call prof_stop(6)
-
       if(outnode)  write(6,*) 
      &     '\nAfter PETSc initialization, starting time steps'
 
