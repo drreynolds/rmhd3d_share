@@ -1,0 +1,52 @@
+###################################################################
+#  Ravi Samtaney, KAUST Mechanical Engineering
+#  Daniel R. Reynolds, SMU Mathematics
+#  Copyright 2004
+#  All Rights Reserved
+###################################################################
+#  machine-specific Makefile for unigrid resistive MHD code
+###################################################################
+
+
+# User should set PETSC_DIR (and optionally PETSC_ARCH) when they installed PETSc.
+# This makefile pulls all the configuration variables out of PETSc's configure.
+include ${PETSC_DIR}/conf/variables
+
+# Fortran 90/95 compiler
+F90 = ${FC}
+
+# Fortran compile flags
+FFLAGS = ${FC_FLAGS} -ffixed-form -fbackslash # gnu debug
+
+# Fortran 77 compiler
+F77 = ${FC}
+
+F77FLAGS = ${FC_FLAGS} -ffixed-form  # gnu debug
+
+# SUNDIALS-specific preprocessor directives (F-to-C conversion)
+SUND_DEFS =
+
+# C compiler
+CC = ${PCC}
+
+# C compile flags
+CFLAGS = ${CC_FLAGS}
+
+# Location of C standard header files (stdlib.h, etc.)
+#C_INCD = -I$(HOME)/apps/include
+
+# SUNDIALS installation location
+SUNDROOT = ${PETSC_DIR}/${PETSC_ARCH}
+
+# PETSc flags
+PETSC_INCD = ${PETSC_CC_INCLUDES}
+PETSC_LIBS = ${PETSC_TS_LIB}
+
+# MPI installation location (F90 compatible), and required libs
+MPIROOT  = /opt/mpich2
+MPI_LIBS = #-lmpich -lmpichf90
+MPI_INCD = #-I${MPIROOT}/include -I${MPIROOT}/include/f90base
+MPI_LIBD = #-L${MPIROOT}/lib
+
+
+####### End of Makefile #######
