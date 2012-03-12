@@ -1,6 +1,6 @@
 ! error function in double precision
 !
-      function derf(x)
+      function rmhd3_derf(x)
       implicit real*8 (a - h, o - z)
       dimension a(0 : 64), b(0 : 64)
       data (a(i), i = 0, 12) / 
@@ -111,6 +111,6 @@
           y = 1
       end if
       if (x .lt. 0) y = -y
-      derf = y
+      rmhd3_derf = y
       end
 !
