@@ -53,7 +53,7 @@ c     local driver variables
       integer          :: istart, maxiter, lastiter
       integer          :: new
       integer          :: tvdFlag
-      integer          :: timestep
+      integer          :: timeStep
 
 #ifdef DYNAMIC
       double precision, allocatable :: abstol(:,:,:,:)
@@ -192,6 +192,8 @@ c     create time stepping context
       CHKERRQ(ierr)
       call TSSetType(ts,TSROSW,ierr)
       CHKERRQ(ierr)
+      call TSSetIFunction(ts,PETSC_NULL_OBJECT,TSIFunction_RMHD3,
+     &     PETSC_NULL_OBJECT,ierr)
       call TSSetRHSFunction(ts,PETSC_NULL_OBJECT,TSRHSFunction_RMHD3,
      &     PETSC_NULL_OBJECT,ierr)
       CHKERRQ(ierr)
@@ -222,6 +224,8 @@ c     start MPI timer
 
 c     integrate from uvec, returns actual final time in ftime
       call TSSolve(ts,uvec,ftime,ierr)
+      CHKERRQ(ierr)
+      call TSGetTimeStepNumber(ts,timeStep,ierr)
       CHKERRQ(ierr)
 
 c     stop MPI timer
