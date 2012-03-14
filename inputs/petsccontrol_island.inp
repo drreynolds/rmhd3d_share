@@ -14,8 +14,8 @@
 
 # absolute and relative tolerance for adaptive controller
 -ts_adapt_type basic            # use "none" to disable adaptivity
--ts_atol 1e-6                   # absolute tolerance
--ts_rtol 1e-6                   # relative tolerance
+-ts_atol 1e-5                   # absolute tolerance
+-ts_rtol 1e-5                   # relative tolerance
 -ts_dt 0.02                     # initial time step
 -ts_adapt_monitor               # monitors step size, local truncation error, and decisions
 
@@ -23,8 +23,8 @@
 -snes_mf                        # Matrix-free finite-difference
 -snes_atol 1e-5                 # absolute tolerance
 -snes_type qn                   # Quasi-Newton/BFGS
--snes_monitor
--snes_converged_reason
+#-snes_monitor                   # monitor residual at each nonlinear iteration
+-snes_converged_reason          # print why the nonlinear method reached convergence
 
 # linear solver configuration
 -ksp_converged_reason           # iteration count and reason for convergence on each iteration
@@ -34,3 +34,6 @@
 # Diagnostics written to files after the solve
 -ts_view petsc-ts.log
 -log_summary petsc-perf.log
+
+# Binary output, the interval ndump is set in mhd.inp
+-output_vts
