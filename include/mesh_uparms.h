@@ -17,7 +17,7 @@ c
 c     Contains:
 c        Xprocs - (int) number of processors in x-direction
 c        Yprocs - (int) number of processors in y-direction
-c        Xprocs - (int) number of processors in z-direction
+c        Zprocs - (int) number of processors in z-direction
 c            nx - (int) number of x-meshpoints
 c            ny - (int) number of y-meshpoints
 c            nz - (int) number of z-meshpoints
