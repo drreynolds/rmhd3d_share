@@ -24,8 +24,8 @@ extern "C" {
 #include <mpi.h>
 #include <time.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
-#include <silo.h>
 #include <sys/stat.h>
   
 /* Definitions of interface function names */
