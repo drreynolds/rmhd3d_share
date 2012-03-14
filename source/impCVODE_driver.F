@@ -44,7 +44,7 @@ c     local driver variables
       double precision :: ux(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar)
       double precision :: phi(ixlo:ixhi,iylo:iyhi,izlo:izhi)
 #endif
-      double precision :: ttot, told, dt, dtexp, tdesired
+      double precision :: ttot, told, dt, dthyp, dtvisc, dtexp, tdesired
       integer          :: istart, maxiter, lastiter
       integer          :: output_flag, binary_flag
       integer          :: ndump, ndiag, new
@@ -200,7 +200,8 @@ c     Start time stepping
       do timeStep = istart,maxiter
 
 c        set next desired output time
-         call newdt(dtexp,ux)
+         call newdt(ux,dthyp,dtvisc)
+         dtexp = min(dthyp,dtvisc)
          told = ttot
          dt = min(dtfac, tstop-ttot)
          tdesired = ttot + dt

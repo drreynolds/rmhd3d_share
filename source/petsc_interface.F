@@ -276,7 +276,7 @@ c=======================================================================
       Vec      uvec
       PetscErrorCode ierr
       PetscScalar,pointer :: uarr(:)
-      PetscReal dt,dtexp
+      PetscReal dt,dthyp,dtvisc
 
       call prof_start(6)
 
@@ -290,9 +290,10 @@ c     Update ghost values. They will normally already be updated.
          call VecRestoreArrayF90(uvec,uarr,ierr)
 
 c     compute explicit time step
-         call newdt(dtexp,ulocal)
+         call newdt(ulocal,dthyp,dtvisc)
          if(outnode) then
-            write(6,*) 'Explicit time step =', dtexp
+            write(6,*) 'Hyperbolic/viscous explicit time step: ',
+     &           dthyp, dtvisc
          endif
 
          if(output_flag==1) then

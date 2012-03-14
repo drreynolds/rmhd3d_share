@@ -214,7 +214,8 @@ c     Start time stepping
       do timeStep = 1,maxiter
 
 c        get timestep size as a scaled explicit time step
-         call newdt(dtexp,ux)
+         call newdt(ux,dthyp,dtvisc)
+         dtexp = min(dthyp,dtvisc)
          dt = min(dtfac, tstop-ttot)
          if(outnode) then
             write(6,*) 'Explicit time step =',dtexp

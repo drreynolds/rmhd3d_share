@@ -10,13 +10,14 @@ c     Copyright 2004
 c     All Rights Reserved
 c=================================================================
 
-      subroutine newdt (dt,ux)
+      subroutine newdt (ux,dthyp,dtvisc)
 c-----------------------------------------------------------------
 c     Description: compute stable time step according to CFL cond.
 c
 c     Arguments:
-c          dt - (out) new timestep
 c          ux - (in) conserved variables
+c       dthyp - (out) timestep for hyperbolic terms
+c      dtvisc - (out) timestep for viscous terms
 c-----------------------------------------------------------------
 c======= Inclusions ===========
       use mesh
@@ -29,12 +30,12 @@ c======= Inclusions ===========
 c======= Declarations =========
       implicit none
       double precision :: ux(IXLO:IXHI, IYLO:IYHI, IZLO:IZHI, nvar)
-      double precision :: dt
+      double precision :: dthyp,dtvisc
       double precision :: rho
       double precision :: xspmax, yspmax, zspmax
       double precision :: u, v, w, press
       double precision :: bi,bj,bk
-      double precision :: dt_local, dtdiff
+      double precision :: dt_local(2), dt_global(2)
       double precision :: rhoInv
       double precision :: Asq
       double precision :: axsq, aysq, azsq
@@ -52,8 +53,8 @@ c======= Internals ============
 c     compute maximum velocity and adjust time step to satisfy
 c     cfl criterion
       cfl = 0.2
-      dt_local = -1.0e0
-      dtdiff = 1.0d16
+      dt_local(1) = -1.0e0
+      dt_local(2) = 1.0d16
       xspmax = 1.D99
       yspmax = 1.D99
       zspmax = 1.D99
@@ -101,9 +102,9 @@ c               waveSpeed = dmax1(cfast,cslow,dsqrt(axsq))
                yspmax = dmin1(yspmax,dy/(dabs(v)+waveSpeedy))
                zspmax = dmin1(zspmax,dz/(dabs(w)+waveSpeedz))
 #ifndef TWO_D
-               dt_local = dmin1(xspmax,yspmax,zspmax)*cfl
+               dt_local(1) = dmin1(xspmax,yspmax,zspmax)*cfl
 #else
-               dt_local = dmin1(xspmax,yspmax)*cfl
+               dt_local(1) = dmin1(xspmax,yspmax)*cfl
 #endif
 
 #ifndef NOVISCFLUX
@@ -113,26 +114,26 @@ c$$$     &			 (1.D0-dexp(-(bk/0.075D0/7.8D0)**2))
 c$$$               else
                   etaPrime = eta
 c               endif
-               dtdiff = dmin1(dm*dm*cfl/etaPrime,dtdiff)
-               dtdiff = dmin1(dm*dm*cfl/mu,dtdiff)
-#else
-               dtdiff = dt_local
+               dt_local(2) = min(dm*dm*cfl/etaPrime,dt_local(2))
+               dt_local(2) = min(dm*dm*cfl/mu,dt_local(2))
 #endif
             enddo
          enddo
       enddo
-c      write(6,*) 'NEWDT',dt_local,dtdiff
-      dt_local=dmin1(dt_local,dtdiff)
+c      write(6,*) 'NEWDT',dt_local(1),dt_local(2)
       
 c     if parallel, get best overall dt
 #ifdef PARALLEL
-      call MPI_Allreduce(dt_local, dt, 1, MPI_DOUBLE_PRECISION,
+      call MPI_Allreduce(dt_local, dt_global, 2, MPI_DOUBLE_PRECISION,
      &                   MPI_MIN, comm3D, ierr)
       Call ErrorHandler(ierr,ERROR_ALLREDUCE)
+      dthyp = dt_global(1)
+      dtvisc = dt_global(2)
 
 c     if not parallel, set output variable
 #else   
-      dt = dt_local
+      dthyp = dt_local(1)
+      dtvisc = dt_global(2)
 #endif  
       return
       end

@@ -39,7 +39,7 @@ c======= Inclusions ===========
 c======= Declarations =========
       double precision :: ux(IXLO:IXHI,IYLO:IYHI,IZLO:IZHI,nvar)
       double precision :: phi(ixlo:ixhi,iylo:iyhi,izlo:izhi)
-      double precision :: dt, ttot
+      double precision :: dt, dthyp, dtvisc, ttot
       integer          :: istart, new, lastiter
 
 
@@ -48,7 +48,8 @@ c======= Internals ============
 c     set initial experimental conditions, time, timestep
       call InitialConditions(ux,phi)
       ttot=0.D0
-      call newdt(dt,ux)
+      call newdt(ux,dthyp,dtvisc)
+      dt = min(dthyp,dtvisc)
 
 c     input initial information from file if required
       if(new/=1) then

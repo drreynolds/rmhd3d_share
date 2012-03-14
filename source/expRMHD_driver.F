@@ -86,7 +86,7 @@ c======= Declarations =========
       double precision :: ux(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar)
       double precision :: phi(ixlo:ixhi,iylo:iyhi,izlo:izhi)
 #endif
-      double precision :: dt, ttot, tstop
+      double precision :: dt, dthyp, dtvisc, ttot, tstop
       integer          :: istart, iter, maxiter, lastiter
       integer          :: output_flag, binary_flag
       integer          :: ndump, ndiag
@@ -225,7 +225,8 @@ c            call WaveSolutionError(ux,ttot)
          endif
 
 c        update time step to satisfy CFL condition
-         call newdt(dt,ux)
+         call newdt(ux,dthyp,dtvisc)
+         dt = min(dthyp,dtvisc)
 
 c        exit time stepping loop if tstop reached
          if ( ttot > tstop ) then
