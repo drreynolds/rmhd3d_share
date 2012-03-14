@@ -63,6 +63,13 @@ c-----------------------------------------------------------------
 #endif
 #endif
 
+c     PETSc distributed array used for parallel diagnostic output
+#include <finclude/petscdmdef.h>
+      PetscInt ndiagvar
+      DM da
+c     communicator for DMDA, ranks reordered from DM
+      MPI_Comm dacomm3d
+
       end module petsc_data
 
       module rmhd3_petsc
@@ -283,7 +290,7 @@ c=======================================================================
       call TSGetTimeStep(ts,dt,ierr)
 
 c     periodically dump data
-      if(mod(timeStep,ndump)==0) then
+      if(mod(timeStep,ndump)==0 .and. output_flag>0) then
 c     Update ghost values. They will normally already be updated.
          call VecGetArrayF90(uvec,uarr,ierr)
          call GlobalToLocal(uarr,ulocal)
@@ -300,7 +307,8 @@ c     compute explicit time step
             if(binary_flag==0) then
                call WriteGnuplotFile(ulocal,timeStep)
             else
-               call WriteBinaryFileParallel(ulocal,timeStep)
+c               call WriteBinaryFileParallel(ulocal,timeStep)
+               call RMHD3PetscWriteVTKFile(ulocal,timeStep,time)
             endif
          endif
          if (output_flag==2) then
@@ -419,18 +427,22 @@ c======= Inclusions ===========
       use mesh
       use mesh_common
       use boundary_conds
-      use sundials_fcmix
+      use mpistuff, only: comm3d
       use petsc_data
 
 c======= Declarations =========
       implicit none
 #include <finclude/petscsys.h>
+#include <finclude/petscdm.h>
+#include <finclude/petscdmda.h>
       double precision :: uu(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar)
       double precision :: ttot
       double precision :: abstol(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar)
       double precision :: tstop, dtfac, ropt(40)
       integer          :: taskchoice
+      integer          :: i,j,k,newrank(0:Nprocs-1)
       PetscErrorCode   :: ierr
+      MPI_Group        :: group,newgroup
 
 c======= Internals ============
 
@@ -461,6 +473,42 @@ c     if using dynamic meshing, allocate work space for PETSc function evaluatio
 
       call PetscInitialize('petsccontrol.inp',ierr)
 
+      call MPI_Comm_group(comm3d,group,ierr)
+      do i=0,Xprocs-1
+         do j=0,Yprocs-1
+            do k=0,Zprocs-1
+               newrank((i*Yprocs+j)*Zprocs+k) = i+Xprocs*(j+Yprocs*k)
+            end do
+         end do
+      end do
+      call MPI_Group_incl(group,Nprocs,newrank,newgroup,ierr)
+      call MPI_Comm_create(comm3d,newgroup,dacomm3d,ierr)
+      call MPI_Group_free(group,ierr)
+      call MPI_Group_free(newgroup,ierr)
+
+      ndiagvar = 11
+      call DMDACreate3d(dacomm3d,
+     &     DMDA_BOUNDARY_NONE,DMDA_BOUNDARY_NONE,
+     &     DMDA_BOUNDARY_NONE,DMDA_STENCIL_STAR,nx,ny,nz,
+     &     Xprocs,Yprocs,Zprocs,
+     &     ndiagvar,0,
+     &     PETSC_NULL_INTEGER,PETSC_NULL_INTEGER,PETSC_NULL_INTEGER,
+     &     da,ierr)
+      CHKERRQ(ierr)
+      call DMDASetFieldName(da,0,'rho',ierr)
+      call DMDASetFieldName(da,1,'Vx',ierr)
+      call DMDASetFieldName(da,2,'Vy',ierr)
+      call DMDASetFieldName(da,3,'Vz',ierr)
+      call DMDASetFieldName(da,4,'Bx',ierr)
+      call DMDASetFieldName(da,5,'By',ierr)
+      call DMDASetFieldName(da,6,'Bz',ierr)
+      call DMDASetFieldName(da,7,'Pressure',ierr)
+      call DMDASetFieldName(da,8,'divB',ierr)
+      call DMDASetFieldName(da,9,'Jcurrent',ierr)
+      call DMDASetFieldName(da,10,'te',ierr)
+      call DMDASetUniformCoordinates(da,xl,xr,yl,yr,zl,zr,ierr)
+      CHKERRQ(ierr)
+
       return
       end subroutine RMHD3PetscInitialize
 c=================================================================
@@ -475,10 +523,16 @@ c======= Inclusions ===========
 
 c======= Declarations =========
       implicit none
+#include <finclude/petscsys.h>
+#include <finclude/petscdm.h>
       PetscErrorCode ierr
 
 c======= Internals ============
 
+      call DMDestroy(da,ierr)
+      CHKERRQ(ierr)
+
+      call MPI_Comm_free(dacomm3d,ierr)
 
 c     free PETSc internal data
       call PetscFinalize(ierr)
@@ -1493,3 +1547,95 @@ c
       return
       end subroutine divFluxViscous
 c=======================================================================
+
+      subroutine RMHD3PetscWriteVTKFile(ulocal,timeStep,time)
+      use mesh
+      use petsc_data, only: da, dacomm3d, outnode
+      implicit none
+#include <finclude/petscsys.h>
+#include <finclude/petscviewer.h>
+#include <finclude/petscvec.h>
+#include <finclude/petscdm.h>
+#include <finclude/petscdmda.h>
+#include <finclude/petscvec.h90>
+      double precision     :: ulocal(IXLO:IXHI,IYLO:IYHI,IZLO:IZHI,nvar)
+      PetscInt             :: timeStep
+      PetscReal            :: time
+      PetscViewer          :: viewer
+      Vec                  :: diagvec
+      PetscScalar, pointer :: darr(:)
+      PetscErrorCode       :: ierr
+      character*256        :: outfile
+
+      call DMGetGlobalVector(da,diagvec,ierr)
+      CHKERRQ(ierr)
+      call VecGetArrayF90(diagvec,darr,ierr)
+      CHKERRQ(ierr)
+      call RMHD3PetscComputeDiagonstics(ulocal,darr)
+      call VecRestoreArrayF90(diagvec,darr,ierr)
+      CHKERRQ(ierr)
+
+      write(outfile,1000) timeStep
+ 1000 format(7Hisland-,i4.4,4H.vts)
+      if (outnode) then
+         write(6,*) 'Writing ', outfile
+      end if
+
+      call PetscViewerVTKOpen(dacomm3d,outfile,FILE_MODE_WRITE,
+     &     viewer,ierr)
+      CHKERRQ(ierr)
+      call VecView(diagvec,viewer,ierr)
+      CHKERRQ(ierr)
+      call PetscViewerDestroy(viewer,ierr)
+      CHKERRQ(ierr)
+
+      call DMRestoreGlobalVector(da,diagvec,ierr)
+      CHKERRQ(ierr)
+      end subroutine RMHD3PetscWriteVTKFile
+
+      subroutine RMHD3PetscComputeDiagonstics(ux,darr)
+      use mesh_parms
+      use petsc_data, only: ndiagvar
+      use properties
+      implicit none
+      integer :: i,j,k
+      double precision :: ux(IXLO:IXHI,IYLO:IYHI,IZLO:IZHI,nvar)
+      PetscScalar ::
+     &     darr(0:ndiagvar-1,nxlocal,nylocal,nzlocal)
+      double precision :: div(IXLO:IXHI,IYLO:IYHI,IZLO:IZHI)
+      double precision :: jcurrent(IXLO:IXHI,IYLO:IYHI,IZLO:IZHI)
+      double precision :: rho,u,v,w,bi,bj,bk,press
+
+c     get div B, toroidal current
+      call DivergenceCD(ux(ixlo,iylo,izlo,5),ux(ixlo,iylo,izlo,6),
+     &     ux(ixlo,iylo,izlo,7),div)
+      call ToroidalCurrent(ux(ixlo,iylo,izlo,5),ux(ixlo,iylo,izlo,6),
+     &     ux(ixlo,iylo,izlo,7),jcurrent)
+
+      do k=1,nzlocal
+         do j=1,nylocal
+            do i=1,nxlocal
+               rho = ux(i,j,k,1)
+               u   = ux(i,j,k,2)/rho
+               v   = ux(i,j,k,3)/rho
+               w   = ux(i,j,k,4)/rho
+               bi  = ux(i,j,k,5)
+               bj  = ux(i,j,k,6)
+               bk  = ux(i,j,k,7)
+               press = (gamma-1.0D0)*(ux(i,j,k,8)
+     &              -0.5D0*rho*(u*u+v*v+w*w)-0.5D0*(bi*bi+bj*bj+bk*bk))
+               darr(0,i,j,k) = rho
+               darr(1,i,j,k) = u
+               darr(2,i,j,k) = v
+               darr(3,i,j,k) = w
+               darr(4,i,j,k) = bi
+               darr(5,i,j,k) = bj
+               darr(6,i,j,k) = bk
+               darr(7,i,j,k) = press
+               darr(8,i,j,k) = div(i,j,k)
+               darr(9,i,j,k) = jcurrent(i,j,k)
+               darr(10,i,j,k) = press+0.5D0*(bi*bi+bj*bj+bk*bk)
+            end do
+         end do
+      end do
+      end subroutine RMHD3PetscComputeDiagonstics
