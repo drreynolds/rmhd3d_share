@@ -176,12 +176,7 @@ c     start timing information for speed check
 c      call Timing
 
 c     Output initial state and start time stepping
-      if(output_flag==1) then
-         if(binary_flag==0) then
-            call WriteGnuplotFile(ux,0)
-c            call WriteAVSFile(ux,0)
-         endif
-      endif
+      call OutputData(ux, phi, 0, output_flag, binary_flag, dt, ttot)
       do timeStep = istart,istart+maxiter-1,1
 
 c        solve for new time step
@@ -196,15 +191,8 @@ c        root outputs timing information
 c        update time, periodically dump data
          ttot = ttot + dt
          if(mod(timeStep,ndump).eq.0) then
-            if(output_flag == 1) then
-               if(binary_flag == 0) then
-c                  call WriteTextFileParallel(ux,timeStep)
-                  call WriteGnuplotFile(ux,timeStep)
-c                  call WriteAVSFile(ux,timeStep)
-               else
-                  call WriteBinaryFileParallel(ux,timeStep)
-               endif
-            endif
+            call OutputData(ux, phi, timeStep, output_flag, binary_flag, 
+     &           dt, ttot)
             if (output_flag == 2) then
 c              dump restart information only
                if(iprocx==1 .and. iprocy==1 .and. iprocz==1) then
@@ -240,15 +228,8 @@ c        exit time stepping loop if tstop reached
       enddo
      
 c     output final solution
-      if(output_flag == 1) then
-         if(binary_flag == 0) then
-c            call WriteTextFileParallel(ux,timeStep)
-            call WriteGnuplotFile(ux,timeStep)
-c            call WriteAVSFile(ux,timeStep)
-         else
-            call WriteBinaryFileParallel(ux,timeStep)
-         endif
-      endif
+      call OutputData(ux, phi, timeStep, output_flag, binary_flag, 
+     &     dt, ttot)
 
 c     dump all remaining data, output diagnostics, close I/O files
       call WrapUp(ux,phi,dt,ttot,timestep)

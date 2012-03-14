@@ -177,18 +177,9 @@ c     initialize CVODE solver structures
 
 
 c     output initial state and diagnostics (energies, mass, etc)
-c        start the diags & I/O profiler
-      call prof_start(6)
-      if (output_flag.eq.1) then
-         if (binary_flag.eq.0) then
-            call WriteGnuplotFile(ux,0)
-c$$$            call WriteAVSFile(ux,0)
-         endif
-      endif
-c     Root node outputs progress
+      call OutputData(ux, phi, 0, output_flag, binary_flag, 
+     &     0.d0, ttot)
       call Diagnostics(ux,phi,ttot)
-c        stop the diags & I/O profiler
-      call prof_stop(6)
 
       if(outnode)  write(6,*) 
      &     '\nAfter CVODE initialization, starting time steps'
@@ -223,30 +214,11 @@ c        do a final update of boundary information [?is this necessary?]
          
 c        in one-step modes, output diagnostics and data every
 c        ndump steps; output BDF, dt info on other steps.  
-         call prof_start(6)
          if (taskchoice==2 .or. taskchoice==4) then
             if (mod(timeStep,ndump) == 0) then
                call fcvdiags(iopt,ropt)
-               if (output_flag == 1) then
-                  if (binary_flag == 0) then
-c                     call WriteTextFileParallel(ux,timeStep)
-                     call WriteGnuplotFile(ux,timeStep)
-c                     call WriteAVSFile(ux,timeStep)
-                  else
-                     call WriteBinaryFileParallel(ux,timeStep)
-                  endif
-               endif
-               if (output_flag == 2) then
-c                 dump restart information only
-                  if(outnode) then
-                     open(itime,file='time.txt',form='formatted')
-                     write(itime,*) dt
-                     write(itime,*) ttot
-                     write(itime,*) timestep-1
-                     close(itime)
-                  endif
-                  call DumpOutFluidParallel(ux,phi)
-               endif
+               call OutputData(ux, phi, timeStep, output_flag, 
+     &              binary_flag, dt, ttot)
             else
                if (outnode) then
                   write(6,'(4x,A,i3)') 'Current BDF Order =',iopt(9)
@@ -261,40 +233,15 @@ c        in normal modes, output diagnostics
 c        check error flag and exit if required
          call fcverr(cvierr)
          if ( cvierr == 1 ) then
-            if(output_flag==1) then
-               if(binary_flag==0) then
-c                  call WriteTextFileParallel(ux,timeStep)
-                  call WriteGnuplotFile(ux,timeStep)
-c$$$                  call WriteAVSFile(ux,timeStep)
-               else
-                  call WriteBinaryFileParallel(ux,timeStep)
-               endif
-            endif
+            call OutputData(ux, phi, timeStep, output_flag, 
+     &           binary_flag, dt, ttot)
             exit
          end if
 
 c        periodically dump data
          if(mod(timeStep,ndump)==0) then
-            if(output_flag==1) then
-               if(binary_flag==0) then
-c                  call WriteTextFileParallel(ux,timeStep)
-                  call WriteGnuplotFile(ux,timeStep)
-c$$$                  call WriteAVSFile(ux,timeStep)
-               else
-                  call WriteBinaryFileParallel(ux,timeStep)
-               endif
-            endif
-            if (output_flag==2) then
-c              dump restart information only
-               if(outnode) then
-                  open(itime,file='time.txt',form='formatted')
-                  write(itime,*) dt
-                  write(itime,*) ttot
-                  write(itime,*) timestep-1
-                  close(itime)
-               endif
-               call DumpOutFluidParallel(ux,phi)
-            endif
+            call OutputData(ux, phi, timeStep, output_flag, 
+     &           binary_flag, dt, ttot)
          endif
 
 c        root outputs timing information
@@ -308,7 +255,6 @@ c        periodically output diagnostic information
             call Diagnostics(ux,phi,ttot)
 c            call WaveSolutionError(ux,ttot)
          endif
-         call prof_stop(6)
 
 c        exit time stepping loop if we have exceeded tstop
          if ( ttot >= tstop ) then
@@ -326,17 +272,8 @@ c     stop MPI timer
       call prof_stop(1)
 
 c     output final solution
-      call prof_start(6)
-      if(output_flag==1) then
-         if(binary_flag==0) then
-c            call WriteTextFileParallel(ux,timeStep)
-            call WriteGnuplotFile(ux,timeStep)
-c$$$            call WriteAVSFile(ux,timeStep)
-         else
-            call WriteBinaryFileParallel(ux,timeStep)
-         endif
-      endif
-      call prof_stop(6)
+       call OutputData(ux, phi, timeStep, output_flag, binary_flag, 
+     &     dt, ttot)
 
 c     output final solver diagnostics
       if (outnode) write(6,'(A,A,11(A,es12.5),A)') 

@@ -49,6 +49,8 @@ c      include "mpif.h"
       integer, parameter :: ERROR_SEND=4
       integer, parameter :: ERROR_RECV=5
       integer, parameter :: ERROR_ALLREDUCE=6
+      integer, parameter :: ERROR_OTHER=7
+      integer, parameter :: ERROR_CARTRANK=8
       
       end module mpistuff
 c=================================================================
