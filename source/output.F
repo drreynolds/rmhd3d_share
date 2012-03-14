@@ -142,7 +142,7 @@ c     set output filename
       
 c     output information to file
       open(idump, file=DumpFile, form='unformatted')
-      write(6,*) 'p',iproc_idx-1,': writing to file',DumpFile
+      write(6,*) 'p',iproc_idx-1,': writing to file ',DumpFile
       write(idump) rgas, gamma, wmol
       write(idump) ux
       write(idump) phi

@@ -233,7 +233,7 @@ clean:
 	\rm -f ${TRASH}
 
 outclean:
-	\rm -rf *.txt *.history data* dump.* gmon.out *.png *.grid.* multimesh*
+	\rm -rf *.txt *.history data* dump.* gmon.out *.png *.grid.* multimesh* dump*.bin
 
 tempclean: clean
 	\rm -i *~ source/*~ include/*~
