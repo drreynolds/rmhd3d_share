@@ -256,8 +256,13 @@ int write_my_silo(double *vx, double *div, double *jcurrent, int index,
     }
   }
   /* write values to silo file */
-  ierr = DBPutQuadvar1(dbfile, "rho", "quadmesh", (float*) tmp, dims, 
-		       ndims, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
+  if (nodal) {
+    ierr = DBPutQuadvar1(dbfile, "rho", "quadmesh", (float*) tmp, dims, 
+			 ndims, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
+  } else {
+    ierr = DBPutQuadvar1(dbfile, "rho", "quadmesh", (float*) tmp, dims, 
+			 ndims, NULL, 0, DB_DOUBLE, DB_ZONECENT, NULL);
+  }
   if (ierr != 0) {
     fprintf(stderr, "Proc %i: error in DBPutQuadvar1 = %i\n",myid,ierr);
     return ierr;
@@ -276,8 +281,13 @@ int write_my_silo(double *vx, double *div, double *jcurrent, int index,
     }
   }
   /* write values to silo file */
-  ierr = DBPutQuadvar1(dbfile, "u", "quadmesh", (float*) tmp, dims, 
-		       ndims, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
+  if (nodal) {
+    ierr = DBPutQuadvar1(dbfile, "u", "quadmesh", (float*) tmp, dims, 
+			 ndims, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
+  } else {
+    ierr = DBPutQuadvar1(dbfile, "u", "quadmesh", (float*) tmp, dims, 
+			 ndims, NULL, 0, DB_DOUBLE, DB_ZONECENT, NULL);
+  }
   if (ierr != 0) {
     fprintf(stderr, "Proc %i: error in DBPutQuadvar1 = %i\n",myid,ierr);
     return ierr;
@@ -296,8 +306,13 @@ int write_my_silo(double *vx, double *div, double *jcurrent, int index,
     }
   }
   /* write values to silo file */
-  ierr = DBPutQuadvar1(dbfile, "v", "quadmesh", (float*) tmp, dims, 
-		       ndims, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
+  if (nodal) {
+    ierr = DBPutQuadvar1(dbfile, "v", "quadmesh", (float*) tmp, dims, 
+			 ndims, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
+  } else {
+    ierr = DBPutQuadvar1(dbfile, "v", "quadmesh", (float*) tmp, dims, 
+			 ndims, NULL, 0, DB_DOUBLE, DB_ZONECENT, NULL);
+  }
   if (ierr != 0) {
     fprintf(stderr, "Proc %i: error in DBPutQuadvar1 = %i\n",myid,ierr);
     return ierr;
@@ -316,8 +331,13 @@ int write_my_silo(double *vx, double *div, double *jcurrent, int index,
     }
   }
   /* write values to silo file */
-  ierr = DBPutQuadvar1(dbfile, "w", "quadmesh", (float*) tmp, dims, 
-		       ndims, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
+  if (nodal) {
+    ierr = DBPutQuadvar1(dbfile, "w", "quadmesh", (float*) tmp, dims, 
+			 ndims, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
+  } else {
+    ierr = DBPutQuadvar1(dbfile, "w", "quadmesh", (float*) tmp, dims, 
+			 ndims, NULL, 0, DB_DOUBLE, DB_ZONECENT, NULL);
+  }
   if (ierr != 0) {
     fprintf(stderr, "Proc %i: error in DBPutQuadvar1 = %i\n",myid,ierr);
     return ierr;
@@ -336,8 +356,13 @@ int write_my_silo(double *vx, double *div, double *jcurrent, int index,
     }
   }
   /* write values to silo file */
-  ierr = DBPutQuadvar1(dbfile, "bx", "quadmesh", (float*) tmp, dims, 
-		       ndims, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
+  if (nodal) {
+    ierr = DBPutQuadvar1(dbfile, "bx", "quadmesh", (float*) tmp, dims, 
+			 ndims, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
+  } else {
+    ierr = DBPutQuadvar1(dbfile, "bx", "quadmesh", (float*) tmp, dims, 
+			 ndims, NULL, 0, DB_DOUBLE, DB_ZONECENT, NULL);
+  }
   if (ierr != 0) {
     fprintf(stderr, "Proc %i: error in DBPutQuadvar1 = %i\n",myid,ierr);
     return ierr;
@@ -356,8 +381,13 @@ int write_my_silo(double *vx, double *div, double *jcurrent, int index,
     }
   }
   /* write values to silo file */
-  ierr = DBPutQuadvar1(dbfile, "by", "quadmesh", (float*) tmp, dims, 
-		       ndims, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
+  if (nodal) {
+    ierr = DBPutQuadvar1(dbfile, "by", "quadmesh", (float*) tmp, dims, 
+			 ndims, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
+  } else {
+    ierr = DBPutQuadvar1(dbfile, "by", "quadmesh", (float*) tmp, dims, 
+			 ndims, NULL, 0, DB_DOUBLE, DB_ZONECENT, NULL);
+  }
   if (ierr != 0) {
     fprintf(stderr, "Proc %i: error in DBPutQuadvar1 = %i\n",myid,ierr);
     return ierr;
@@ -376,8 +406,13 @@ int write_my_silo(double *vx, double *div, double *jcurrent, int index,
     }
   }
   /* write values to silo file */
-  ierr = DBPutQuadvar1(dbfile, "bz", "quadmesh", (float*) tmp, dims, 
-		       ndims, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
+  if (nodal) {
+    ierr = DBPutQuadvar1(dbfile, "bz", "quadmesh", (float*) tmp, dims, 
+			 ndims, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
+  } else {
+    ierr = DBPutQuadvar1(dbfile, "bz", "quadmesh", (float*) tmp, dims, 
+			 ndims, NULL, 0, DB_DOUBLE, DB_ZONECENT, NULL);
+  }
   if (ierr != 0) {
     fprintf(stderr, "Proc %i: error in DBPutQuadvar1 = %i\n",myid,ierr);
     return ierr;
@@ -396,8 +431,13 @@ int write_my_silo(double *vx, double *div, double *jcurrent, int index,
     }
   }
   /* write values to silo file */
-  ierr = DBPutQuadvar1(dbfile, "p", "quadmesh", (float*) tmp, dims, 
-		       ndims, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
+  if (nodal) {
+    ierr = DBPutQuadvar1(dbfile, "p", "quadmesh", (float*) tmp, dims, 
+			 ndims, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
+  } else {
+    ierr = DBPutQuadvar1(dbfile, "p", "quadmesh", (float*) tmp, dims, 
+			 ndims, NULL, 0, DB_DOUBLE, DB_ZONECENT, NULL);
+  }
   if (ierr != 0) {
     fprintf(stderr, "Proc %i: error in DBPutQuadvar1 = %i\n",myid,ierr);
     return ierr;
@@ -415,8 +455,13 @@ int write_my_silo(double *vx, double *div, double *jcurrent, int index,
     }
   }
   /* write values to silo file */
-  ierr = DBPutQuadvar1(dbfile, "divB", "quadmesh", (float*) tmp, dims, 
-		       ndims, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
+  if (nodal) {
+    ierr = DBPutQuadvar1(dbfile, "divB", "quadmesh", (float*) tmp, dims, 
+			 ndims, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
+  } else {
+    ierr = DBPutQuadvar1(dbfile, "divB", "quadmesh", (float*) tmp, dims, 
+			 ndims, NULL, 0, DB_DOUBLE, DB_ZONECENT, NULL);
+  }
   if (ierr != 0) {
     fprintf(stderr, "Proc %i: error in DBPutQuadvar1 = %i\n",myid,ierr);
     return ierr;
@@ -434,8 +479,13 @@ int write_my_silo(double *vx, double *div, double *jcurrent, int index,
     }
   }
   /* write values to silo file */
-  ierr = DBPutQuadvar1(dbfile, "Jz", "quadmesh", (float*) tmp, dims, 
-		       ndims, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
+  if (nodal) {
+    ierr = DBPutQuadvar1(dbfile, "Jz", "quadmesh", (float*) tmp, dims, 
+			 ndims, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
+  } else {
+    ierr = DBPutQuadvar1(dbfile, "Jz", "quadmesh", (float*) tmp, dims, 
+			 ndims, NULL, 0, DB_DOUBLE, DB_ZONECENT, NULL);
+  }
   if (ierr != 0) {
     fprintf(stderr, "Proc %i: error in DBPutQuadvar1 = %i\n",myid,ierr);
     return ierr;
@@ -460,8 +510,13 @@ int write_my_silo(double *vx, double *div, double *jcurrent, int index,
     }
   }
   /* write values to silo file */
-  ierr = DBPutQuadvar1(dbfile, "ptot", "quadmesh", (float*) tmp, dims, 
-		       ndims, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
+  if (nodal) {
+    ierr = DBPutQuadvar1(dbfile, "ptot", "quadmesh", (float*) tmp, dims, 
+			 ndims, NULL, 0, DB_DOUBLE, DB_NODECENT, NULL);
+  } else {
+    ierr = DBPutQuadvar1(dbfile, "ptot", "quadmesh", (float*) tmp, dims, 
+			 ndims, NULL, 0, DB_DOUBLE, DB_ZONECENT, NULL);
+  }
   if (ierr != 0) {
     fprintf(stderr, "Proc %i: error in DBPutQuadvar1 = %i\n",myid,ierr);
     return ierr;
