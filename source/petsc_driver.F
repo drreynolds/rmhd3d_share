@@ -253,7 +253,7 @@ c     output final solver diagnostics
      &     '\n  ---------------------------------------\n'
 
 c     dump all remaining data, output diagnostics, close I/O files
-      call WrapUp(ulocal,phi,dt,ttot,timestep)
+      call WrapUp(ulocal,phi,dt,ttot,timestep,output_flag)
 
 c     free up allocated memory
       call TSDestroy(ts,ierr)

@@ -233,7 +233,7 @@ c     output final solution
      &     dt, ttot)
 
 c     dump all remaining data, output diagnostics, close I/O files
-      call WrapUp(ux,phi,dt,ttot,timestep)
+      call WrapUp(ux,phi,dt,ttot,timestep,outut_flag)
 
 c     stop timing information for speed check
 c      call Timing

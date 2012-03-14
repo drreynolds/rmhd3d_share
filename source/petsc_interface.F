@@ -287,6 +287,8 @@ c=======================================================================
       PetscBool :: output_vts
 
       call TSGetTimeStep(ts,dt,ierr)
+
+      output_vts = PETSC_FALSE
       call PetscOptionsGetBool(PETSC_NULL_CHARACTER,'-output_vts',
      &     output_vts,PETSC_NULL_BOOL,ierr)
       CHKERRQ(ierr)
@@ -309,7 +311,6 @@ c     compute explicit time step
 c     Any upstream output
          call OutputData(ulocal,phi,timeStep,
      &           output_flag,binary_flag,min(dthyp,dtvisc),time)
-         output_vts = PETSC_FALSE
 
          call RMHD3PetscWriteVTKFile(ulocal,timeStep,time)
       endif

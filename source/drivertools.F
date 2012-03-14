@@ -81,7 +81,7 @@ c=================================================================
 
 
 
-      subroutine WrapUp(ux,phi,dt,ttot,timestep)
+      subroutine WrapUp(ux,phi,dt,ttot,timestep,output_flag)
 c-----------------------------------------------------------------
 c     Description: Outputs final fluid information, closes IO 
 c        streams
@@ -108,7 +108,7 @@ c======= Declarations =========
       double precision :: ux(IXLO:IXHI,IYLO:IYHI,IZLO:IZHI,nvar)
       double precision :: phi(IXLO:IXHI,IYLO:IYHI)
       double precision :: dt, ttot
-      integer          :: timestep
+      integer          :: timestep, output_flag
 
 
 c======= Internals ============
@@ -123,7 +123,9 @@ c     root node outputs timelevel information
       endif
 
 c     output final fluid information
-      call DumpOutFluidParallel(ux,phi)
+      if (output_flag > 0) then
+         call DumpOutFluidParallel(ux,phi)
+      endif
 
 c     root node closes files
       if(iprocx==1 .and. iprocy==1 .and. iprocz==1) then
