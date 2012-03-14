@@ -27,6 +27,7 @@ c-----------------------------------------------------------------
       save
 
       integer :: Xprocs, Yprocs, Zprocs
+      integer :: debugprocs
       integer :: nx, ny, nz, nghost
       integer, parameter :: nvar=8
 

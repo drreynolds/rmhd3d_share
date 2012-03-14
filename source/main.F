@@ -44,7 +44,7 @@ c     namelists
       namelist /bdryconds/ xbc, ybc, zbc
 #ifdef DYNAMIC
       namelist /meshsize/  nx, ny, nz, nghost
-      namelist /meshprocs/ xprocs, yprocs, zprocs
+      namelist /meshprocs/ xprocs, yprocs, zprocs, debugprocs
 #endif
 
 c======= Internals ============
@@ -164,7 +164,9 @@ c     output relevant processor information
       if (my_id == 0) then
          write(6,*) '  '
       endif
-      write(6,'(A,i4,A,i4)') '  Started proc #', my_id, ' /', num_nodes
+      if (debugprocs > 0) then
+         write(6,'(A,i4,A,i4)') '  Started proc #',my_id,' /',num_nodes
+      endif
       
       if (num_nodes .lt. Nprocs) then
          write(istderr,*) 'SORRY: PROGRAM ONLY WORKS FOR ', Nprocs,

@@ -7,6 +7,7 @@
   xprocs = 1,
   yprocs = 1,
   zprocs = 1,
+  debugprocs = 0,
  &end
  &bdryconds
   xbc = 0,

@@ -146,9 +146,11 @@ c     determine local domain location in general domain
       if(outnode) then
          write(6,*) '\nAfter local domain setup...'
       endif
-      write(6,'(A,i4,A,3(2(es8.1,1x),A))') 
-     &     '\nLocal subdomain, p',my_id,' = [',XLloc,XRloc,
-     &     '] x [',YLloc,YRloc,'] x [',ZLloc,ZRloc,']'
+      if (debugprocs > 0) then
+         write(6,'(A,i4,A,3(2(es8.1,1x),A))') 
+     &        '\nLocal subdomain, p',my_id,' = [',XLloc,XRloc,
+     &        '] x [',YLloc,YRloc,'] x [',ZLloc,ZRloc,']'
+      endif
 
 c     initialize PETSc solver structures
       if(outnode) 

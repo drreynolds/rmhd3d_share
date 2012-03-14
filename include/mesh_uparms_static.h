@@ -30,6 +30,7 @@ c-----------------------------------------------------------------
       integer, parameter :: XPROCS=1
       integer, parameter :: YPROCS=1
       integer, parameter :: ZPROCS=1
+      integer, parameter :: debugprocs=1
       integer, parameter :: nx=64
       integer, parameter :: ny=64
       integer, parameter :: nz=64
