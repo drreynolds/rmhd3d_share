@@ -284,13 +284,16 @@ c=======================================================================
       PetscErrorCode ierr
       PetscScalar,pointer :: uarr(:)
       PetscReal dt,dthyp,dtvisc
-
-      call prof_start(6)
+      PetscBool :: output_vts
 
       call TSGetTimeStep(ts,dt,ierr)
+      call PetscOptionsGetBool(PETSC_NULL_CHARACTER,'-output_vts',
+     &     output_vts,PETSC_NULL_BOOL,ierr)
+      CHKERRQ(ierr)
 
 c     periodically dump data
-      if(mod(timeStep,ndump)==0 .and. output_flag>0) then
+      if(mod(timeStep,ndump)==0
+     &     .and. (output_flag > 0 .or. output_vts)) then
 c     Update ghost values. They will normally already be updated.
          call VecGetArrayF90(uvec,uarr,ierr)
          call GlobalToLocal(uarr,ulocal)
@@ -303,32 +306,18 @@ c     compute explicit time step
      &           dthyp, dtvisc
          endif
 
-         if(output_flag==1) then
-            if(binary_flag==0) then
-               call WriteGnuplotFile(ulocal,timeStep)
-            else
-c               call WriteBinaryFileParallel(ulocal,timeStep)
-               call RMHD3PetscWriteVTKFile(ulocal,timeStep,time)
-            endif
-         endif
-         if (output_flag==2) then
-c     dump restart information only
-            if(outnode) then
-               open(itime,file='time.txt',form='formatted')
-               write(itime,*) timeStep
-               write(itime,*) time
-               write(itime,*) timestep-1
-               close(itime)
-            endif
-            call DumpOutFluidParallel(ulocal,phi)
-         endif
+c     Any upstream output
+         call OutputData(ulocal,phi,timeStep,
+     &           output_flag,binary_flag,min(dthyp,dtvisc),time)
+         output_vts = PETSC_FALSE
+
+         call RMHD3PetscWriteVTKFile(ulocal,timeStep,time)
       endif
 
 c     periodically output diagnostic information
       if(mod(timeStep,ndiag)==0) then
          call Diagnostics(ulocal,phi,time)
       endif
-      call prof_stop(6)
       end subroutine TSMonitor_RMHD3
 c=======================================================================
 

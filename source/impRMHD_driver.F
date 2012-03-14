@@ -187,18 +187,9 @@ c     if parallel, wait until all processors are ready
 
 
 c     output initial state and diagnostics (energies, mass, etc), 
-c        start the diags & I/O profiler
-      call prof_start(6)
-      if(output_flag==1) then
-         if(binary_flag==0) then
-            call WriteGnuplotFile(ux,0)
-c$$$            call WriteAVSFile(ux,0)
-         endif
-      endif
-c     Root node outputs progress
+      call OutputData(ux, phi, 0, output_flag, binary_flag, 
+     &     0.d0, ttot)
       call Diagnostics(ux,phi,ttot)
-c        stop the diags & I/O profiler
-      call prof_stop(6)
 
       if(outnode) write(6,*) '\n Finished initialization,',
      &     ' starting time steps'
@@ -225,15 +216,6 @@ c        get timestep size as a scaled explicit time step
 c        set current timelevel information into saved variables
          dFold = dFnew
          uold  = ux
-
-c$$$c        output initial residual information
-c$$$         call prof_start(6)
-c$$$         if(outnode) write(6,'(A)')  
-c$$$     &        '\n  ------------- before kinsol solution ------------'
-c$$$         call fkfunDiags(ux,fscale)
-c$$$         if(outnode) write(6,'(A)') 
-c$$$     &        '  -------------------------------------------------'
-c$$$         call prof_stop(6)
 
 c        call Kinsol to solve for new time step
          call fkinsol(ux, globalstrat, uscale, fscale, kier)
@@ -287,29 +269,10 @@ c        output updated residual information after div B cleaning
 #endif
 
 c        update time, periodically dump data
-         call prof_start(6)
          ttot = ttot + dt
          if(mod(timeStep,ndump)==0) then
-            if(output_flag==1) then
-               if(binary_flag==0) then
-c                  call WriteTextFileParallel(ux,timeStep)
-                  call WriteGnuplotFile(ux,timeStep)
-c                  call WriteAVSFile(ux,timeStep)
-               else
-                  call WriteBinaryFileParallel(ux,timeStep)
-               endif
-            endif
-            if (output_flag==2) then
-c              dump restart information only
-               if(outnode) then
-                  open(itime,file='time.txt',form='formatted')
-                  write(itime,*) dt
-                  write(itime,*) ttot
-                  write(itime,*) timestep-1
-                  close(itime)
-               endif
-               call DumpOutFluidParallel(ux,phi)
-            endif
+            call OutputData(ux, phi, timeStep, output_flag, binary_flag, 
+     &           dt, ttot)
          endif
 
 c        root outputs timing information
@@ -318,6 +281,7 @@ c        root outputs timing information
          
 
 c        periodically output diagnostic information
+         call prof_start(6)
          if(mod(timeStep,ndiag)==0) then
             call Diagnostics(ux,phi,ttot)
 c            call WaveSolutionError(ux,ttot)
@@ -340,17 +304,8 @@ c     stop MPI timer
       call prof_stop(1)
 
 c     output final solution
-      call prof_start(6)
-      if(output_flag == 1) then
-         if(binary_flag == 0) then
-c            call WriteTextFileParallel(ux,timeStep)
-            call WriteGnuplotFile(ux,timeStep)
-c$$$            call WriteAVSFile(ux,timeStep)
-         else
-            call WriteBinaryFileParallel(ux,timeStep)
-         endif
-      endif
-      call prof_stop(6)
+      call OutputData(ux, phi, timeStep, output_flag, binary_flag, 
+     &     dt, ttot)
 
 
 c     output final solver diagnostics

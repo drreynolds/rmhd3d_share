@@ -12,7 +12,7 @@ xl, xr, yl, yr, zl, zr, ndump = mhd3d.load_mhd()
 nx, ny, nz, xprocs, yprocs, zprocs, xbc, ybc, zbc = mhd3d.load_mesh()
 
 # set the total number of snapshots
-Nt = times.size
+Nt = mhd3d.count_outputs()
 print 'printing ',Nt,' solution snapshots'
 
 # slice through the center of the domain (in z-direction)
@@ -22,17 +22,18 @@ sl = int(nz/2)
 slx = int(nx/2); 
 
 # loop over snapshots, loading values and plotting
-for tstep in range(0,Nt,ndump):
+for tstep in range(0,Nt*ndump,ndump):
+    print '  step ',tstep
     
     # load solution data
-    x,y,z,rho,u,v,w,bx,by,bz,p,dB,j,te = mhd3d.load_vals(tstep)
+    x,y,z,rho,u,v,w,bx,by,bz,p,dB,j,ptot = mhd3d.load_vals(tstep)
 
     # rho contour
     figure()
     s = rho[:,:,sl]
     h = imshow(s, hold=False, extent=(yl, yr, xl, xr), origin='lower')
     colorbar(h, orientation='horizontal')
-    title('rho, t = ' + repr(round(times[tstep],4)))
+    title('rho, tstep = ' + repr(tstep))
     savefig('rho_' + repr(tstep).zfill(6) + '.png')
         
     # u contour
@@ -40,7 +41,7 @@ for tstep in range(0,Nt,ndump):
     s = u[:,:,sl]
     h = imshow(s, hold=False, extent=(yl, yr, xl, xr), origin='lower')
     colorbar(h, orientation='horizontal')
-    title('u, t = ' + repr(round(times[tstep],4)))
+    title('u, tstep = ' + repr(tstep))
     savefig('u_' + repr(tstep).zfill(6) + '.png')
         
     # v contour
@@ -48,7 +49,7 @@ for tstep in range(0,Nt,ndump):
     s = v[:,:,sl]
     h = imshow(s, hold=False, extent=(yl, yr, xl, xr), origin='lower')
     colorbar(h, orientation='horizontal')
-    title('v, t = ' + repr(round(times[tstep],4)))
+    title('v, tstep = ' + repr(tstep))
     savefig('v_' + repr(tstep).zfill(6) + '.png')
         
     # w contour
@@ -56,7 +57,7 @@ for tstep in range(0,Nt,ndump):
     s = w[:,:,sl]
     h = imshow(s, hold=False, extent=(yl, yr, xl, xr), origin='lower')
     colorbar(h, orientation='horizontal')
-    title('w, t = ' + repr(round(times[tstep],4)))
+    title('w, tstep = ' + repr(tstep))
     savefig('w_' + repr(tstep).zfill(6) + '.png')
         
     # bx contour
@@ -64,7 +65,7 @@ for tstep in range(0,Nt,ndump):
     s = bx[:,:,sl]
     h = imshow(s, hold=False, extent=(yl, yr, xl, xr), origin='lower')
     colorbar(h, orientation='horizontal')
-    title('bx, t = ' + repr(round(times[tstep],4)))
+    title('bx, tstep = ' + repr(tstep))
     savefig('bx_' + repr(tstep).zfill(6) + '.png')
         
     # by contour
@@ -72,7 +73,7 @@ for tstep in range(0,Nt,ndump):
     s = by[:,:,sl]
     h = imshow(s, hold=False, extent=(yl, yr, xl, xr), origin='lower')
     colorbar(h, orientation='horizontal')
-    title('by, t = ' + repr(round(times[tstep],4)))
+    title('by, tstep = ' + repr(tstep))
     savefig('by_' + repr(tstep).zfill(6) + '.png')
         
     # bz contour
@@ -80,7 +81,7 @@ for tstep in range(0,Nt,ndump):
     s = bz[:,:,sl]
     h = imshow(s, hold=False, extent=(yl, yr, xl, xr), origin='lower')
     colorbar(h, orientation='horizontal')
-    title('bz, t = ' + repr(round(times[tstep],4)))
+    title('bz, tstep = ' + repr(tstep))
     savefig('bz_' + repr(tstep).zfill(6) + '.png')
         
     # p contour
@@ -88,7 +89,7 @@ for tstep in range(0,Nt,ndump):
     s = p[:,:,sl]
     h = imshow(s, hold=False, extent=(yl, yr, xl, xr), origin='lower')
     colorbar(h, orientation='horizontal')
-    title('p, t = ' + repr(round(times[tstep],4)))
+    title('p, tstep = ' + repr(tstep))
     savefig('p_' + repr(tstep).zfill(6) + '.png')
         
     # dB contour
@@ -96,7 +97,7 @@ for tstep in range(0,Nt,ndump):
     s = log10(abs(dB[:,:,sl]))
     h = imshow(s, hold=False, extent=(yl, yr, xl, xr), origin='lower')
     colorbar(h, orientation='horizontal')
-    title('log(div B), t = ' + repr(round(times[tstep],4)))
+    title('log(div B), tstep = ' + repr(tstep))
     savefig('divB_' + repr(tstep).zfill(6) + '.png')
         
     # Jcur contour
@@ -104,16 +105,16 @@ for tstep in range(0,Nt,ndump):
     s = j[slx,:,:]
     h = imshow(s, hold=False, extent=(zl, zr, xl, xr), origin='lower')
     colorbar(h, orientation='horizontal')
-    title('Jcurrent, t = ' + repr(round(times[tstep],4)))
+    title('Jcurrent, tstep = ' + repr(tstep))
     savefig('Jcur_' + repr(tstep).zfill(6) + '.png')
         
-    # te contour
+    # ptot contour
     figure()
-    s = te[:,:,sl]
+    s = ptot[:,:,sl]
     h = imshow(s, hold=False, extent=(yl, yr, xl, xr), origin='lower')
     colorbar(h, orientation='horizontal')
-    title('total energy, t = ' + repr(round(times[tstep],4)))
-    savefig('te_' + repr(tstep).zfill(6) + '.png')
+    title('total pressure, tstep = ' + repr(tstep))
+    savefig('ptot_' + repr(tstep).zfill(6) + '.png')
     
 
 ##### end of script #####

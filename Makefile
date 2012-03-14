@@ -15,8 +15,8 @@ include Make.config
 include Make.machine
 
 # append problem and interface preprocessor defs to compilation defs.
-FFLAGS_ = $(FFLAGS) $(PROB_DEFS) $(SUND_DEFS)
-CFLAGS_ = $(CFLAGS) $(PROB_DEFS) $(SUND_DEFS)
+FFLAGS_ = $(FFLAGS) $(PROB_DEFS) $(SUND_DEFS) $(SILO_DEFS)
+CFLAGS_ = $(CFLAGS) $(PROB_DEFS) $(SUND_DEFS) $(SILO_DEFS)
 
 
 
@@ -24,10 +24,10 @@ CFLAGS_ = $(CFLAGS) $(PROB_DEFS) $(SUND_DEFS)
 
 # all executables depend on these files
 ALLSRC = modules profiling main setupgrid setuplocaldomain \
-         setboundaryvalues output bdryexchange             \
-         seteigenvectors_cons inviscidfluxcd2              \
+         setboundaryvalues output mkdir_output write_silo  \
+         bdryexchange seteigenvectors_cons inviscidfluxcd2 \
          inviscidfluxcd4 inviscidfluxtcd projection newdt  \
-         xchange diags drivertools mhdtools derf
+         xchange diags drivertools mhdtools derf 
 
 # executables including viscous fluxes depend on these
 VISCSRC = viscousfluxcd2 viscousfluxcd4 viscousfluxtcd 
@@ -119,11 +119,11 @@ CVODE_LIBS  = -lsundials_fcvode -lsundials_cvode
 KINSOL_LIBS = -lsundials_fkinsol -lsundials_kinsol
 
 # Final usable variables
-INCS    = -Iinclude ${MPI_INCD} ${SUND_INCD} ${C_INCD} ${PETSC_INCD}
-KLIBS   = ${SUND_LIBD} ${KINSOL_LIBS} ${SUND_LIBS} ${MPI_LIBD} ${MPI_LIBS}
-CVLIBS  = ${SUND_LIBD} ${CVODE_LIBS} ${SUND_LIBS} ${MPI_LIBD} ${MPI_LIBS}
-KLIBSH   = ${SUND_LIBD} ${KINSOL_LIBS} ${SUND_LIBS} ${MPI_LIBD} ${MPI_LIBS}
-CVLIBSH  = ${SUND_LIBD} ${CVODE_LIBS} ${SUND_LIBS} ${MPI_LIBD} ${MPI_LIBS}
+INCS    = -Iinclude ${MPI_INCD} ${SUND_INCD} ${C_INCD} ${PETSC_INCD} ${SILO_INCD}
+KLIBS   = ${SUND_LIBD} ${KINSOL_LIBS} ${SUND_LIBS} ${MPI_LIBD} ${MPI_LIBS} ${SILO_LIBS}
+CVLIBS  = ${SUND_LIBD} ${CVODE_LIBS} ${SUND_LIBS} ${MPI_LIBD} ${MPI_LIBS} ${SILO_LIBS}
+KLIBSH  = ${SUND_LIBD} ${KINSOL_LIBS} ${SUND_LIBS} ${MPI_LIBD} ${MPI_LIBS} ${SILO_LIBS}
+CVLIBSH = ${SUND_LIBD} ${CVODE_LIBS} ${SUND_LIBS} ${MPI_LIBD} ${MPI_LIBS} ${SILO_LIBS}
 
 # compilation cleanup files
 TRASH = source/*.o tests/*.o *.mod source/*.il
@@ -233,7 +233,7 @@ clean:
 	\rm -f ${TRASH}
 
 outclean:
-	\rm -f C_test* F_test* *.txt *.history output.0* outavs.00* dump.* gmon.out precmat.* rhsvec.* *.png
+	\rm -rf *.txt *.history data* dump.* gmon.out *.png *.grid.* multimesh*
 
 tempclean: clean
 	\rm -i *~ source/*~ include/*~

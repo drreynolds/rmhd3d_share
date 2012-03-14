@@ -138,64 +138,167 @@ def load_RunHistory():
             np.array(divB), np.array(SolTime)];
     
 ##########
+def load_proclayout():
+    """Returns nprocs and layout, where layout is a 2D array of processor layout"""
+    """(each row is 1 proc, columns are processor location in x,y,z directions)"""
+    """from proc_layout.txt"""
+    import shlex
+    import numpy as np
+    # load the mesh information
+    data = np.loadtxt("proc_layout.txt")
+    xprocs = int(data[0,1])
+    yprocs = int(data[0,2])
+    zprocs = int(data[0,3])
+    nprocs = xprocs*yprocs*zprocs
+    layout = np.zeros((nprocs,3), dtype=int)
+    for iproc in range(nprocs):
+        layout[iproc,0] = data[iproc+1,1]
+        layout[iproc,1] = data[iproc+1,2]
+        layout[iproc,2] = data[iproc+1,3]
+    return [nprocs, layout];
+
+##########
+def load_mygrid(xloc,yloc,zloc):
+    """Returns x,y,z arrays for the processor at process location xloc,yloc,zloc"""
+    import shlex
+    import numpy as np
+    # load the mesh information
+    xfile = 'x.grid.' + repr(xloc).zfill(3)
+    yfile = 'y.grid.' + repr(yloc).zfill(3)
+    zfile = 'z.grid.' + repr(zloc).zfill(3)
+    xgrid = np.loadtxt(xfile)
+    ygrid = np.loadtxt(yfile)
+    zgrid = np.loadtxt(zfile)
+    return [xgrid, ygrid, zgrid];
+
+##########
+def count_outputs():
+    """Returns Nout, the total number of time dumps"""
+    import shlex
+    import os.path
+    # get ndump
+    xl,xr,yl,yr,zl,zr,ndump = load_mhd()
+    maxoutputs = 10000000
+    Nout = 0
+    for iout in range(0,maxoutputs,ndump):
+        outfile = 'data' + repr(iout).zfill(6)
+        if (os.path.isdir(outfile)):
+            Nout += 1
+        else:
+            break
+    return Nout;
+
+##########
 def load_vals(tdump):
-    """Returns x,y,z,rho,u,v,w,bx,by,bz,p,dB,j,te from a given data dump"""
+    """Returns x,y,z,rho,u,v,w,bx,by,bz,p,dB,jz,ptot from a given data dump"""
     import shlex
     import numpy as np
     sdump = repr(tdump).zfill(6)
-    outfile = 'output.001.' + sdump
+    # load mesh information
     nx,ny,nz,xprocs,yprocs,zprocs,xbc,ybc,zbc = load_mesh()
-    f = open(outfile)
-    x  = np.zeros(nx*ny*nz,dtype=float); y   = np.zeros(nx*ny*nz,dtype=float); 
-    z  = np.zeros(nx*ny*nz,dtype=float); rho = np.zeros(nx*ny*nz,dtype=float); 
-    u  = np.zeros(nx*ny*nz,dtype=float); v   = np.zeros(nx*ny*nz,dtype=float); 
-    w  = np.zeros(nx*ny*nz,dtype=float); bx  = np.zeros(nx*ny*nz,dtype=float); 
-    by = np.zeros(nx*ny*nz,dtype=float); bz  = np.zeros(nx*ny*nz,dtype=float); 
-    p  = np.zeros(nx*ny*nz,dtype=float); dB  = np.zeros(nx*ny*nz,dtype=float); 
-    j  = np.zeros(nx*ny*nz,dtype=float); te  = np.zeros(nx*ny*nz,dtype=float); 
-    idx = 0;
-    for line in f:
-        txt = shlex.split(line)
-        if (("#" not in txt) and (txt != [])):
-            x[idx]   = float(txt[0])
-            y[idx]   = float(txt[1])
-            z[idx]   = float(txt[2])
-            rho[idx] = float(txt[3])
-            u[idx]   = float(txt[4])
-            v[idx]   = float(txt[5])
-            w[idx]   = float(txt[6])
-            bx[idx]  = float(txt[7])
-            by[idx]  = float(txt[8])
-            bz[idx]  = float(txt[9])
-            p[idx]   = float(txt[10])
-            dB[idx]  = float(txt[11])
-            j[idx]   = float(txt[12])
-            te[idx]  = float(txt[13])
-            idx += 1
-    f.close()
-    # reshape 1D arrays to 3D
-    xarr = np.array(x[0:nx]);
-    yarr = np.zeros(ny);
-    zarr = np.zeros(nz);
-    idx = 0;
-    for k in range(ny):
-        yarr[idx] = y[k*nx];
-        idx += 1;
-    idx = 0;
-    for k in range(nz):
-        zarr[idx] = z[k*nx*ny];
-        idx += 1;
-    rho3D = np.reshape(rho, (nx,ny,nz), order='F')
-    u3D   = np.reshape(u,   (nx,ny,nz), order='F')
-    v3D   = np.reshape(v,   (nx,ny,nz), order='F')
-    w3D   = np.reshape(w,   (nx,ny,nz), order='F')
-    bx3D  = np.reshape(bx,  (nx,ny,nz), order='F')
-    by3D  = np.reshape(by,  (nx,ny,nz), order='F')
-    bz3D  = np.reshape(bz,  (nx,ny,nz), order='F')
-    p3D   = np.reshape(p,   (nx,ny,nz), order='F')
-    dB3D  = np.reshape(dB,  (nx,ny,nz), order='F')
-    j3D   = np.reshape(j,   (nx,ny,nz), order='F')
-    te3D  = np.reshape(te,  (nx,ny,nz), order='F')
-    return [xarr,yarr,zarr,rho3D,u3D,v3D,w3D,bx3D,by3D,bz3D,p3D,dB3D,j3D,te3D]
+    # load domain information
+    xl,xr,yl,yr,zl,zr,ndump = load_mhd()
+    # load processor layout
+    nprocs,layout = load_proclayout()
+    # check that layout and mesh.inp match
+    if (xprocs*yprocs*zprocs != nprocs):
+        print 'Error: proc_layout.txt and mesh.inp disagree on total proc count!'
+        return -1
+    # set mesh increments
+    dx = (xr-xl)/nx
+    dy = (yr-yl)/ny
+    dz = (zr-zl)/nz
+    # set x,y,z Cartesian grid information
+    x = np.linspace(xl+0.5*dx,xr-0.5*dx,nx)
+    y = np.linspace(yl+0.5*dy,yr-0.5*dy,ny)
+    z = np.linspace(zl+0.5*dz,zr-0.5*dz,nz)
+    # set generic local problem dimensions (last proc. in a dir. may differ)
+    nxlocal = nx/xprocs
+    nylocal = ny/yprocs
+    nzlocal = nz/zprocs
+    # initialize solution output
+    rho  = np.zeros((nx,ny,nz), dtype=float, order='F')
+    u    = np.zeros((nx,ny,nz), dtype=float, order='F')
+    v    = np.zeros((nx,ny,nz), dtype=float, order='F')
+    w    = np.zeros((nx,ny,nz), dtype=float, order='F')
+    bx   = np.zeros((nx,ny,nz), dtype=float, order='F')
+    by   = np.zeros((nx,ny,nz), dtype=float, order='F')
+    bz   = np.zeros((nx,ny,nz), dtype=float, order='F')
+    p    = np.zeros((nx,ny,nz), dtype=float, order='F')
+    dB   = np.zeros((nx,ny,nz), dtype=float, order='F')
+    jcur = np.zeros((nx,ny,nz), dtype=float, order='F')
+    ptot = np.zeros((nx,ny,nz), dtype=float, order='F')
+    # iterate over the output files
+    for iproc in range(nprocs):
+        # determine output file for this processor
+        sproc = repr(iproc).zfill(6)
+        outfile = 'data' + sdump + '/output' + sproc + '.txt'
+        # determine local processor extents in global grid
+        istart = (layout[iproc,0]-1)*nxlocal
+        iend   = min(istart+nxlocal-1, nx-1)
+        jstart = (layout[iproc,1]-1)*nylocal
+        jend   = min(jstart+nylocal-1, ny-1)
+        kstart = (layout[iproc,2]-1)*nzlocal
+        kend   = min(kstart+nzlocal-1, nz-1)
+        data = np.loadtxt(outfile)
+        # load local data file
+        data = np.reshape(data, (nxlocal,nylocal,nzlocal,11), order='F')
+        # store local data file into global outputs
+        #    rho
+        for k in range(kend-kstart+1):
+            for j in range(jend-jstart+1):
+                for i in range(iend-istart+1):
+                    rho[istart+i,jstart+j,kstart+k] = data[i,j,k,0]
+        #    u
+        for k in range(kend-kstart+1):
+            for j in range(jend-jstart+1):
+                for i in range(iend-istart+1):
+                    u[istart+i,jstart+j,kstart+k] = data[i,j,k,1]
+        #    v
+        for k in range(kend-kstart+1):
+            for j in range(jend-jstart+1):
+                for i in range(iend-istart+1):
+                    v[istart+i,jstart+j,kstart+k] = data[i,j,k,2]
+        #    w
+        for k in range(kend-kstart+1):
+            for j in range(jend-jstart+1):
+                for i in range(iend-istart+1):
+                    w[istart+i,jstart+j,kstart+k] = data[i,j,k,3]
+        #    bx
+        for k in range(kend-kstart+1):
+            for j in range(jend-jstart+1):
+                for i in range(iend-istart+1):
+                    bx[istart+i,jstart+j,kstart+k] = data[i,j,k,4]
+        #    by
+        for k in range(kend-kstart+1):
+            for j in range(jend-jstart+1):
+                for i in range(iend-istart+1):
+                    by[istart+i,jstart+j,kstart+k] = data[i,j,k,5]
+        #    bz
+        for k in range(kend-kstart+1):
+            for j in range(jend-jstart+1):
+                for i in range(iend-istart+1):
+                    bz[istart+i,jstart+j,kstart+k] = data[i,j,k,6]
+        #    p
+        for k in range(kend-kstart+1):
+            for j in range(jend-jstart+1):
+                for i in range(iend-istart+1):
+                    p[istart+i,jstart+j,kstart+k] = data[i,j,k,7]
+        #    dB
+        for k in range(kend-kstart+1):
+            for j in range(jend-jstart+1):
+                for i in range(iend-istart+1):
+                    dB[istart+i,jstart+j,kstart+k] = data[i,j,k,8]
+        #    jcur
+        for k in range(kend-kstart+1):
+            for j in range(jend-jstart+1):
+                for i in range(iend-istart+1):
+                    jcur[istart+i,jstart+j,kstart+k] = data[i,j,k,9]
+        #    ptot
+        for k in range(kend-kstart+1):
+            for j in range(jend-jstart+1):
+                for i in range(iend-istart+1):
+                    ptot[istart+i,jstart+j,kstart+k] = data[i,j,k,10]
+    return [x,y,z,rho,u,v,w,bx,by,bz,p,dB,jcur,ptot]
 ##########
 

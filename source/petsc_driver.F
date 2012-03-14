@@ -232,15 +232,8 @@ c     stop MPI timer
       call prof_stop(1)
 
 c     output final solution
-      call prof_start(6)
-      if(output_flag==1) then
-         if(binary_flag==0) then
-            call WriteGnuplotFile(ulocal,timeStep)
-         else
-            call WriteBinaryFileParallel(ulocal,timeStep)
-         endif
-      endif
-      call prof_stop(6)
+      call OutputData(ulocal, phi, timeStep, output_flag, binary_flag, 
+     &     dt, ttot)
 
 c     output final solver diagnostics
       if (outnode) write(6,'(A,A,11(A,es12.5),A)') 

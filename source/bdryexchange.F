@@ -20,9 +20,21 @@ c               return value is a single integer denoting process
 c               -- unique for each process.
 c       
       use mesh_parms
-      integer ipx, ipy, ipz
+#ifdef PARALLEL
+      use mpistuff
+#endif
+      integer ipx, ipy, ipz, id, pcoords(3)
       
+#ifdef PARALLEL
+      pcoords(1) = ipx-1
+      pcoords(2) = ipy-1
+      pcoords(3) = ipz-1
+      call MPI_Cart_rank(comm3d, pcoords, id, ierr)
+      call ErrorHandler(ierr,ERROR_CARTRANK)
+      iprocnum = id+1
+#else
       iprocnum = (ipz-1)*XPROCS*YPROCS+(ipy-1)*XPROCS + ipx
+#endif
       
       return
       end function iprocnum
