@@ -1,51 +1,61 @@
 ###################################################################
-#  machine-specific Makefile for unigrid resistive MHD code
+#  Ravi Samtaney, KAUST Mechanical Engineering
 #  Daniel R. Reynolds, SMU Mathematics
+#  Copyright 2004
+#  All Rights Reserved
+###################################################################
+#  machine-specific Makefile for unigrid resistive MHD code
 ###################################################################
 
 
+# User should set PETSC_DIR (and optionally PETSC_ARCH) when they installed PETSc.
+# This makefile pulls all the configuration variables out of PETSc's configure.
+include ${PETSC_DIR}/conf/variables
+
 # Fortran 90/95 compiler
-F90 = mpif90
+F90 = ${FC}
 
 # Fortran compile flags
-#FFLAGS = -p -g -O0 -ffixed-form -fbackslash # gnu debug
-FFLAGS = -Ofast -march=native -ffixed-form -fbackslash # gnu perf.
+FFLAGS = ${FC_FLAGS} -ffixed-form -fbackslash # gnu debug
 
 # Fortran 77 compiler
-F77 = mpif90
+F77 = ${FC}
 
-#F77FLAGS = -p -g -O0 -ffixed-form  # gnu debug
-F77FLAGS = -Ofast -march=native -ffixed-form  # gnu perf.
+F77FLAGS = ${FC_FLAGS} -ffixed-form  # gnu debug
 
 # SUNDIALS-specific preprocessor directives (F-to-C conversion)
 SUND_DEFS = -DSUNDIALS_CASE_LOWER -DSUNDIALS_UNDERSCORE_ONE \
             -DSUNDIALS_DOUBLE_PRECISION
 
 # C compiler
-CC = mpicc
+CC = ${PCC}
 
 # C compile flags
-#CFLAGS = -p -O0 -Wall # debug
-CFLAGS = -Ofast -march=native # perf.
+CFLAGS = ${CC_FLAGS}
 
 # Location of C standard header files (stdlib.h, etc.)
-C_INCD = -I/usr/include
+#C_INCD = -I/usr/include
 
 # SUNDIALS installation location
 SUNDROOT = /usr/local/sundials-2.4.0/gnu
+#SUNDROOT = ${PETSC_DIR}/${PETSC_ARCH}
+
+# PETSc flags
+PETSC_INCD = ${PETSC_CC_INCLUDES}
+PETSC_LIBS = ${PETSC_TS_LIB}
 
 # MPI installation location (F90 compatible), and required libs
-MPIROOT  = 
-MPI_LIBS = 
-MPI_INCD = 
-MPI_LIBD = 
+MPIROOT  = #/opt/mpich2
+MPI_LIBS = #-lmpich -lmpichf90
+MPI_INCD = #-I${MPIROOT}/include -I${MPIROOT}/include/f90base
+MPI_LIBD = #-L${MPIROOT}/lib
 
 # SILO/HDF5/LIBZ/C++ installation locations, and build requirements
 #SILO_DEFS = -DSILO  # enables code for SILO output (must fill in defs below)
-SILOROOT = /usr/local/silo-4.8
-HDF5ROOT = /usr/local/hdf5-1.8.8
-#SILOROOT = /usr/local/silo-4.8_debug
-#HDF5ROOT = /usr/local/hdf5-1.8.8_debug
+#SILOROOT = /usr/local/silo-4.8
+#HDF5ROOT = /usr/local/hdf5-1.8.8
+SILOROOT = /usr/local/silo-4.8_debug
+HDF5ROOT = /usr/local/hdf5-1.8.8_debug
 LIBZROOT = /usr/local/lib
 CPP_LIBS = -L/usr/lib/gcc/x86_64-linux-gnu/4.6 -lstdc++
 SILO_INCD = -I${SILOROOT}/include
