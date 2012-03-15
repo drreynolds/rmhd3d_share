@@ -11,16 +11,26 @@
 #      3D:  <nothing>
 DIMENSION = 
 
-# CD vs. upwind:         -DUPWIND     (default is CD)
-# order of CD:  -DTCD (Tuned CD), -DCD4 (4th-order)  
-#            (default is 2nd-order, with TCD preferred over CD4)
-#            (TCD and CD4 need at least 2 ghost cells)
-#            (one of these CD methods is still used for the B field)
-# Zip-differencing:      -DZIP        (default is off)
-# Upwind formulation:    -DPRIMITIVE  (use inviscidfluxrp)
+# Discretizations:
+#
+# CD vs. upwind:   default is CD, but upwind discretizations 
+#            are enabled using the  -DUPWIND  directive
+#
+# CD methods:  default is 2nd order
+#            -DTCD (Tuned Centered differences), 
+#            -DCD4 (4th-order centered differences)  
+#            -DZIP ("zip" difference [Chacon])
+#    If multiples of these are set below, we choose 
+#           TCD, then CD4, then ZIP
+#    Both TCD and CD4 require 2 ghost zones per face, while CD2 and
+#            ZIP require only 1
+#
+# Upwind methods:        -DPRIMITIVE  (use inviscidfluxrp)
 #	                 -DROE	      (use inviscidfluxroe)
 #                        (default)    (use inviscidfluxlf)
-# Harten's entropy fix:  -DHARTEN     (default is off)
+#    If multiple are set, we choose PRIMITIVE then ROE
+#    To enable Harten's entropy fix, add -DHARTEN
+#
 DISCRETIZATION = 
 
 # parallel execution:    -DPARALLEL   (default is serial)

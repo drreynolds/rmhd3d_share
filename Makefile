@@ -27,10 +27,12 @@ ALLSRC = modules profiling main setupgrid setuplocaldomain \
          setboundaryvalues output mkdir_output write_silo  \
          bdryexchange seteigenvectors_cons inviscidfluxcd2 \
          inviscidfluxcd4 inviscidfluxtcd projection newdt  \
-         xchange diags drivertools mhdtools derf 
-
-# executables including viscous fluxes depend on these
-VISCSRC = viscousfluxcd2 viscousfluxcd4 viscousfluxtcd 
+         xchange diags drivertools mhdtools derf           \
+         seteigenvectors_prim constructlrstates4 setalphas \
+         setdurl setsls setroevariables seteigenvalues     \
+         flux_wrappers inviscidfluxlf inviscidfluxzip      \
+         inviscidfluxroe inviscidfluxrp viscousfluxcd2     \
+         viscousfluxcd4 viscousfluxtcd 
 
 # executables using explicit time-stepping depend on these
 EXPSRC = mhdsolverk4 expRMHD_driver
@@ -51,15 +53,15 @@ HEADS = nvector_mhd.h mesh.h mesh_common.h mesh_parms.h  \
 HEADERS = $(addprefix include/, $(HEADS))
 
 # expStatic source files and corresp. object files
-SRC1 = $(ALLSRC) $(VISCSRC) $(EXPSRC) init_static
+SRC1 = $(ALLSRC) $(EXPSRC) init_static
 OBJ1 = $(addprefix source/, $(addsuffix .o, $(SRC1)))
 
 # kinStatic source files and corresp object files
-SRC2 = $(ALLSRC) $(VISCSRC) $(KINSRC) init_static
+SRC2 = $(ALLSRC) $(KINSRC) init_static
 OBJ2 = $(addprefix source/, $(addsuffix .o, $(SRC2)))
 
 # cvStatic source files and corresp object files
-SRC4 = $(ALLSRC) $(VISCSRC) $(CVSRC) init_static
+SRC4 = $(ALLSRC) $(CVSRC) init_static
 OBJ4 = $(addprefix source/, $(addsuffix .o, $(SRC4)))
 
 # expLinWave source files and corresp. object files
@@ -75,31 +77,31 @@ SRC7 = $(ALLSRC) $(CVSRC) initwave3
 OBJ7 = $(addprefix source/, $(addsuffix .o, $(SRC7)))
 
 # expKH source files and corresp. object files
-SRC9 = $(ALLSRC) $(VISCSRC) $(EXPSRC) initKH
+SRC9 = $(ALLSRC) $(EXPSRC) initKH
 OBJ9 = $(addprefix source/, $(addsuffix .o, $(SRC9)))
 
 # kinKH source files and corresp. object files
-SRC11 = $(ALLSRC) $(VISCSRC) $(KINSRC) initKH 
+SRC11 = $(ALLSRC) $(KINSRC) initKH 
 OBJ11 = $(addprefix source/, $(addsuffix .o, $(SRC11)))
 
 # cvKH source files and corresp. object files
-SRC10 = $(ALLSRC) $(VISCSRC) $(CVSRC) initKH
+SRC10 = $(ALLSRC) $(CVSRC) initKH
 OBJ10 = $(addprefix source/, $(addsuffix .o, $(SRC10)))
 
 # exp_island source files and corresp. object files
-SRC12 = $(ALLSRC) $(VISCSRC) $(EXPSRC) init_island
+SRC12 = $(ALLSRC) $(EXPSRC) init_island
 OBJ12 = $(addprefix source/, $(addsuffix .o, $(SRC12)))
 
 # kin_island source files and corresp. object files
-SRC13 = $(ALLSRC) $(VISCSRC) $(KINSRC) init_island
+SRC13 = $(ALLSRC) $(KINSRC) init_island
 OBJ13 = $(addprefix source/, $(addsuffix .o, $(SRC13)))
 
 # cv_island source files and corresp. object files
-SRC14 = $(ALLSRC) $(VISCSRC) $(CVSRC) init_island
+SRC14 = $(ALLSRC) $(CVSRC) init_island
 OBJ14 = $(addprefix source/, $(addsuffix .o, $(SRC14)))
 
 # petsc_island source files and corresp. object files
-SRC15 = $(ALLSRC) $(VISCSRC) $(PETSCSRC) init_island
+SRC15 = $(ALLSRC) $(PETSCSRC) init_island
 OBJ15 = $(addprefix source/, $(addsuffix .o, $(SRC15)))
 
 # fnvec_mhd_test source files and corresp. object files
