@@ -43,25 +43,25 @@ c     using upwind with eigensystem from primitive variables
       call InviscidFluxRP(finv,vv,idir,dt)
 #elif  ROE
 c     using upwind with eigensystem from conservative variables
-      call InviscidFluxRoe(finv,vv,1,dt)
+      call InviscidFluxRoe(finv,vv,idir,dt)
 #else
 c     using upwind with Lax-Friedrichs scheme
-      call InviscidFluxLF(finv,vv,1,dt)
+      call InviscidFluxLF(finv,vv,idir,dt)
 #endif
 #else
 c     using centered-differences (of some form)
 #ifdef TCD
 c     2nd-order tuned central differences
-      call InviscidFluxTCD(finv,vv,1,dt)
+      call InviscidFluxTCD(finv,vv,idir,dt)
 #elif CD4
 c     4th-order standard central differences
-      call InviscidFluxCD4(finv,vv,1,dt)
+      call InviscidFluxCD4(finv,vv,idir,dt)
 #elif ZIP
 c     2nd-order ZIP difference
-      call InviscidFluxZip(finv,vv,1,dt)
+      call InviscidFluxZip(finv,vv,idir,dt)
 #else
 c     2nd-order standard central differences
-      call InviscidFluxCD2(finv,vv,1,dt)
+      call InviscidFluxCD2(finv,vv,idir,dt)
 #endif
 #endif
 
