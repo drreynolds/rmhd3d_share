@@ -635,138 +635,36 @@ c     get the viscous flux requirements dudx and dbdx
 c------------ x-directional fluxes ------------
 c     Hyperbolic fluxes
       inlo = ixlo;  inhi = ixhi
-#ifdef UPWIND
-#ifdef PRIMITIVE
-c        using upwind with eigensystem from primitive variables
-      call InviscidFluxRP(finv,vv,1,dt)
-#elif  ROE
-c        using upwind with eigensystem from conservative variables
-      call InviscidFluxRoe(finv,vv,1,dt)
-#else
-c        using upwind with Lax-Friedrichs scheme
-      call InviscidFluxLF(finv,vv,1,dt)
-#endif
-#else
-c        using centered-differences (of some form)
-#ifdef TCD
-c        2nd-order tuned central differences
-      call InviscidFluxTCD(finv,vv,1,dt)
-#elif CD4
-c        4th-order standard central differences
-      call InviscidFluxCD4(finv,vv,1,dt)
-#else
-c        2nd-order standard central differences
-      call InviscidFluxCD2(finv,vv,1,dt)
-#endif
-#endif
+      call InviscidFluxWrapper(finv,vv,1,dt)
 
 c     Parabolic fluxes
       inlo = ixlo;  inhi = ixhi
       indx = 1;  indy = 0;  indz = 0
-#ifndef NOVISCFLUX
-#ifdef TCD
-c        2nd-order tuned central differences
-      call ViscousFluxTCD(fvis,vv,dudx,dbdx,1,dt,indx,indy,indz)
-#elif CD4
-c        4th-order standard central differences
-      call ViscousFluxCD4(fvis,vv,dudx,dbdx,1,dt,indx,indy,indz)
-#else
-c        2nd-order standard central differences
-      call ViscousFluxCD2(fvis,vv,dudx,dbdx,1,dt,indx,indy,indz)
-#endif
-#endif
+      call ViscousFluxWrapper(fvis,vv,dudx,dbdx,1,dt,indx,indy,indz)
 
 
 c------------ y-directional fluxes ------------
 #ifndef ONE_D
 c     Hyperbolic fluxes
       inlo = iylo;  inhi = iyhi
-#ifdef UPWIND
-#ifdef PRIMITIVE
-c        using upwind with eigensystem from primitive variables
-      call InviscidFluxRP(ginv,vv,2,dt)
-#elif  ROE
-c        using upwind with eigensystem from conservative variables
-      call InviscidFluxRoe(ginv,vv,2,dt)
-#else
-c        using upwind with Lax-Friedrichs scheme
-      call InviscidFluxLF(ginv,vv,2,dt)
-#endif
-#else
-c        using centered-differences (of some form)
-#ifdef TCD
-c        2nd-order tuned central differences
-      call InviscidFluxTCD(ginv,vv,2,dt)
-#elif CD4
-c        4th-order standard central differences
-      call InviscidFluxCD4(ginv,vv,2,dt)
-#else
-c        2nd-order standard central differences
-      call InviscidFluxCD2(ginv,vv,2,dt)
-#endif
-#endif
+      call InviscidFluxWrapper(ginv,vv,2,dt)
 
 c     Parabolic fluxes
       inlo = iylo;  inhi = iyhi
       indx = 0;  indy = 1;  indz = 0
-#ifndef NOVISCFLUX
-#ifdef TCD
-c        2nd-order tuned central differences
-      call ViscousFluxTCD(gvis,vv,dudx,dbdx,2,dt,indx,indy,indz)
-#elif CD4
-c        4th-order standard central differences
-      call ViscousFluxCD4(gvis,vv,dudx,dbdx,2,dt,indx,indy,indz)
-#else
-c        2nd-order standard central differences
-      call ViscousFluxCD2(gvis,vv,dudx,dbdx,2,dt,indx,indy,indz)
-#endif
-#endif
+      call ViscousFluxWrapper(gvis,vv,dudx,dbdx,2,dt,indx,indy,indz)
 
 
 c------------ z-directional fluxes ------------
 #ifndef TWO_D
 c     Hyperbolic fluxes
       inlo = izlo;  inhi = izhi
-#ifdef UPWIND
-#ifdef PRIMITIVE
-c     using upwind with eigensystem from primitive variables
-      call InviscidFluxRP(hinv,vv,3,dt)
-#elif  ROE
-c     using upwind with eigensystem from conservative variables
-      call InviscidFluxRoe(hinv,vv,3,dt)
-#else
-c        using upwind with Lax-Friedrichs scheme
-      call InviscidFluxLF(hinv,vv,3,dt)
-#endif
-#else
-c     using centered-differences (of some form)
-#ifdef TCD
-c        2nd-order tuned central differences
-      call InviscidFluxTCD(hinv,vv,3,dt)
-#elif CD4
-c        4th-order standard central differences
-      call InviscidFluxCD4(hinv,vv,3,dt)
-#else
-c        2nd-order standard central differences
-      call InviscidFluxCD2(hinv,vv,3,dt)
-#endif
-#endif
+      call InviscidFluxWrapper(hinv,vv,3,dt)
 
 c     Parabolic fluxes
       inlo = izlo;  inhi = izhi
       indx = 0;  indy = 0;  indz = 1
-#ifndef NOVISCFLUX
-#ifdef TCD
-c        2nd-order tuned central differences
-      call ViscousFluxTCD(hvis,vv,dudx,dbdx,3,dt,indx,indy,indz)
-#elif CD4
-c        4th-order standard central differences
-      call ViscousFluxCD4(hvis,vv,dudx,dbdx,3,dt,indx,indy,indz)
-#else
-c        2nd-order standard central differences
-      call ViscousFluxCD2(hvis,vv,dudx,dbdx,3,dt,indx,indy,indz)
-#endif
-#endif
+      call ViscousFluxWrapper(hvis,vv,dudx,dbdx,3,dt,indx,indy,indz)
 #endif
 #endif
 

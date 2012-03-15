@@ -1198,49 +1198,12 @@ c     construct the face-centered x-directional fluxes
 c
 c     Hyperbolic fluxes
       inlo = ixlo;  inhi = ixhi
-#ifdef UPWIND
-#ifdef PRIMITIVE
-c        using upwind with eigensystem from primitive variables
-      call InviscidFluxRP(finv,vv,1,dt)
-#elif  ROE
-c        using upwind with eigensystem from conservative variables
-      call InviscidFluxRoe(finv,vv,1,dt)
-#else
-c        using upwind with Lax-Friedrichs scheme
-      call InviscidFluxLF(finv,vv,1,dt)
-#endif
-#else
-c        using centered-differences (of some form)
-#ifdef TCD
-c        2nd-order tuned central differences
-      call InviscidFluxTCD(finv,vv,1,dt)
-#elif CD4
-c        4th-order standard central differences
-      call InviscidFluxCD4(finv,vv,1,dt)
-#elif ZIP
-c        2nd-order ZIP difference
-      call InviscidFluxZip(finv,vv,1,dt)
-#else
-c        2nd-order standard central differences
-      call InviscidFluxCD2(finv,vv,1,dt)
-#endif
-#endif
+      call InviscidFluxWrapper(finv,vv,1,dt)
 c
 c     Parabolic fluxes
       inlo = ixlo;  inhi = ixhi
       indx = 1;  indy = 0;  indz = 0
-#ifndef NOVISCFLUX
-#ifdef TCD
-c        2nd-order tuned central differences
-      call ViscousFluxTCD(fvis,vv,dudx,dbdx,1,dt,indx,indy,indz)
-#elif CD4
-c        4th-order standard central differences
-      call ViscousFluxCD4(fvis,vv,dudx,dbdx,1,dt,indx,indy,indz)
-#else
-c        2nd-order standard central differences
-      call ViscousFluxCD2(fvis,vv,dudx,dbdx,1,dt,indx,indy,indz)
-#endif
-#endif
+      call ViscousFluxWrapper(fvis,vv,dudx,dbdx,1,dt,indx,indy,indz)
 
 
 c     construct the face-centered y-directional fluxes (2D,2.5D,3D)
@@ -1248,49 +1211,12 @@ c     construct the face-centered y-directional fluxes (2D,2.5D,3D)
 c
 c     Hyperbolic fluxes
       inlo = iylo;  inhi = iyhi
-#ifdef UPWIND
-#ifdef PRIMITIVE
-c        using upwind with eigensystem from primitive variables
-      call InviscidFluxRP(ginv,vv,2,dt)
-#elif  ROE
-c        using upwind with eigensystem from conservative variables
-      call InviscidFluxRoe(ginv,vv,2,dt)
-#else
-c        using upwind with Lax-Friedrichs scheme
-      call InviscidFluxLF(ginv,vv,2,dt)
-#endif
-#else
-c        using centered-differences (of some form)
-#ifdef TCD
-c        2nd-order tuned central differences
-      call InviscidFluxTCD(ginv,vv,2,dt)
-#elif CD4
-c        4th-order standard central differences
-      call InviscidFluxCD4(ginv,vv,2,dt)
-#elif ZIP
-c        2nd-order ZIP difference
-      call InviscidFluxZip(ginv,vv,2,dt)
-#else
-c        2nd-order standard central differences
-      call InviscidFluxCD2(ginv,vv,2,dt)
-#endif
-#endif
+      call InviscidFluxWrapper(ginv,vv,2,dt)
 c
 c     Parabolic fluxes
       inlo = iylo;  inhi = iyhi
       indx = 0;  indy = 1;  indz = 0
-#ifndef NOVISCFLUX
-#ifdef TCD
-c        2nd-order tuned central differences
-      call ViscousFluxTCD(gvis,vv,dudx,dbdx,2,dt,indx,indy,indz)
-#elif CD4
-c        4th-order standard central differences
-      call ViscousFluxCD4(gvis,vv,dudx,dbdx,2,dt,indx,indy,indz)
-#else
-c        2nd-order standard central differences
-      call ViscousFluxCD2(gvis,vv,dudx,dbdx,2,dt,indx,indy,indz)
-#endif
-#endif
+      call ViscousFluxWrapper(gvis,vv,dudx,dbdx,2,dt,indx,indy,indz)
 
 
 c     construct the face-centered z-directional fluxes (3D)
@@ -1298,49 +1224,12 @@ c     construct the face-centered z-directional fluxes (3D)
 c
 c     Hyperbolic fluxes
       inlo = izlo;  inhi = izhi
-#ifdef UPWIND
-#ifdef PRIMITIVE
-c        using upwind with eigensystem from primitive variables
-      call InviscidFluxRP(hinv,vv,3,dt)
-#elif  ROE
-c        using upwind with eigensystem from conservative variables
-      call InviscidFluxRoe(hinv,vv,3,dt)
-#else
-c        using upwind with Lax-Friedrichs scheme
-      call InviscidFluxLF(hinv,vv,3,dt)
-#endif
-#else
-c        using centered-differences (of some form)
-#ifdef TCD
-c        2nd-order tuned central differences
-      call InviscidFluxTCD(hinv,vv,3,dt)
-#elif CD4
-c        4th-order standard central differences
-      call InviscidFluxCD4(hinv,vv,3,dt)
-#elif ZIP
-c        2nd-order ZIP difference
-      call InviscidFluxZip(hinv,vv,3,dt)
-#else
-c        2nd-order standard central differences
-      call InviscidFluxCD2(hinv,vv,3,dt)
-#endif
-#endif
+      call InviscidFluxWrapper(hinv,vv,3,dt)
 c
 c     Parabolic fluxes
       inlo = izlo;  inhi = izhi
       indx = 0;  indy = 0;  indz = 1
-#ifndef NOVISCFLUX
-#ifdef TCD
-c        2nd-order tuned central differences
-      call ViscousFluxTCD(hvis,vv,dudx,dbdx,3,dt,indx,indy,indz)
-#elif CD4
-c        4th-order standard central differences
-      call ViscousFluxCD4(hvis,vv,dudx,dbdx,3,dt,indx,indy,indz)
-#else
-c        2nd-order standard central differences
-      call ViscousFluxCD2(hvis,vv,dudx,dbdx,3,dt,indx,indy,indz)
-#endif
-#endif
+      call ViscousFluxWrapper(hvis,vv,dudx,dbdx,3,dt,indx,indy,indz)
 #endif
 #endif
 

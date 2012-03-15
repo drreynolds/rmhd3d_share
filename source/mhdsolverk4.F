@@ -120,109 +120,25 @@ c     First stage in RK4
 #endif
 c     
       inlo=ixlo; inhi=ixhi
-c      call InviscidFlux(finv,vrpx,ux,vx,1,dt)
-#ifdef UPWIND
-#ifdef PRIMITIVE
-      call InviscidFluxRP(finv,vx,1,dt)
-#elif  ROE
-      call InviscidFluxRoe(finv,vx,1,dt)
-#else
-      call InviscidFluxLF(finv,vx,1,dt)
-#endif
-#else
-#ifdef TCD
-      call InviscidFluxTCD(finv,vx,1,dt)
-#elif CD4
-      call InviscidFluxCD4(finv,vx,1,dt)
-#elif ZIP
-      call InviscidFluxZip(finv,vx,1,dt)
-#else
-      call InviscidFluxCD2(finv,vx,1,dt)
-#endif
-#endif
+      call InviscidFluxWrapper(finv,vx,1,dt)
       inlo=ixlo; inhi=ixhi
       indx=1; indy=0;indz=0;
-c      call ViscousFlux(fvis,vx,dudx,dbdx,1,dt,indx,indy,indz)
-#ifndef NOVISCFLUX
-#ifdef TCD
-      call ViscousFluxTCD(fvis,vx,dudx,dbdx,1,dt,indx,indy,indz)
-#elif CD4
-      call ViscousFluxCD4(fvis,vx,dudx,dbdx,1,dt,indx,indy,indz)
-#else
-      call ViscousFluxCD2(fvis,vx,dudx,dbdx,1,dt,indx,indy,indz)
-#endif
-#endif
+      call ViscousFluxWrapper(fvis,vx,dudx,dbdx,1,dt,indx,indy,indz)
 c     
 c     
 #ifndef ONE_D
       inlo=iylo; inhi=iyhi
-c      call InviscidFlux(ginv,vrpy,ux,vx,2,dt)
-#ifdef UPWIND
-#ifdef PRIMITIVE
-      call InviscidFluxRP(ginv,vx,2,dt)
-#elif  ROE
-      call InviscidFluxRoe(ginv,vx,2,dt)
-#else
-      call InviscidFluxLF(ginv,vx,2,dt)
-#endif
-#else
-#ifdef TCD
-      call InviscidFluxTCD(ginv,vx,2,dt)
-#elif CD4
-      call InviscidFluxCD4(ginv,vx,2,dt)
-#elif ZIP
-      call InviscidFluxZip(ginv,vx,2,dt)
-#else
-      call InviscidFluxCD2(ginv,vx,2,dt)
-#endif
-#endif
+      call InviscidFluxWrapper(ginv,vx,2,dt)
       inlo = iylo;  inhi = iyhi
       indx = 0;  indy = 1;  indz = 0
-c      call ViscousFlux(gvis,vx,dudx,dbdx,2,dt,indx,indy,indz)
-#ifndef NOVISCFLUX
-#ifdef TCD
-      call ViscousFluxTCD(gvis,vx,dudx,dbdx,2,dt,indx,indy,indz)
-#elif CD4
-      call ViscousFluxCD4(gvis,vx,dudx,dbdx,2,dt,indx,indy,indz)
-#else
-      call ViscousFluxCD2(gvis,vx,dudx,dbdx,2,dt,indx,indy,indz)
-#endif
-#endif
+      call ViscousFluxWrapper(gvis,vx,dudx,dbdx,2,dt,indx,indy,indz)
 c     
 #ifndef TWO_D
       inlo=izlo; inhi=izhi
-c      call InviscidFlux(hinv,vrpz,ux,vx,3,dt)
-#ifdef UPWIND
-#ifdef PRIMITIVE
-      call InviscidFluxRP(hinv,vx,3,dt)
-#elif  ROE
-      call InviscidFluxRoe(hinv,vx,3,dt)
-#else
-      call InviscidFluxLF(hinv,vx,3,dt)
-#endif
-#else
-#ifdef TCD
-      call InviscidFluxTCD(hinv,vx,3,dt)
-#elif CD4
-      call InviscidFluxCD4(hinv,vx,3,dt)
-#elif ZIP
-      call InviscidFluxZip(hinv,vx,3,dt)
-#else
-      call InviscidFluxCD2(hinv,vx,3,dt)
-#endif
-#endif
+      call InviscidFluxWrapper(hinv,vx,3,dt)
       inlo = izlo;  inhi = izhi
       indx = 0;  indy = 0;  indz = 1
-c      call ViscousFlux(hvis,vx,dudx,dbdx,3,dt,indx,indy,indz)
-#ifndef NOVISCFLUX
-#ifdef TCD
-      call ViscousFluxTCD(hvis,vx,dudx,dbdx,3,dt,indx,indy,indz)
-#elif CD4
-      call ViscousFluxCD4(hvis,vx,dudx,dbdx,3,dt,indx,indy,indz)
-#else
-      call ViscousFluxCD2(hvis,vx,dudx,dbdx,3,dt,indx,indy,indz)
-#endif
-#endif
+      call ViscousFluxWrapper(hvis,vx,dudx,dbdx,3,dt,indx,indy,indz)
 #endif
 #endif
 c     
@@ -246,108 +162,24 @@ c
 #endif
       divb=0.D0
       inlo=ixlo; inhi=ixhi
-C      call InviscidFlux(finv,vrpx,ux,vx,1,dt)
-#ifdef UPWIND
-#ifdef PRIMITIVE
-      call InviscidFluxRP(finv,vx,1,dt)
-#elif  ROE
-      call InviscidFluxRoe(finv,vx,1,dt)
-#else
-      call InviscidFluxLF(finv,vx,1,dt)
-#endif
-#else
-#ifdef TCD
-      call InviscidFluxTCD(finv,vx,1,dt)
-#elif CD4
-      call InviscidFluxCD4(finv,vx,1,dt)
-#elif ZIP
-      call InviscidFluxZip(finv,vx,1,dt)
-#else
-      call InviscidFluxCD2(finv,vx,1,dt)
-#endif
-#endif
-      inlo = ixlo;  inhi = ixhi
-      indx = 1;  indy = 0;  indz = 0
-C      call ViscousFlux(fvis,vx,dudx,dbdx,1,dt,indx,indy,indz)
-#ifndef NOVISCFLUX
-#ifdef TCD
-      call ViscousFluxTCD(fvis,vx,dudx,dbdx,1,dt,indx,indy,indz)
-#elif CD4
-      call ViscousFluxCD4(fvis,vx,dudx,dbdx,1,dt,indx,indy,indz)
-#else
-      call ViscousFluxCD2(fvis,vx,dudx,dbdx,1,dt,indx,indy,indz)
-#endif
-#endif
+      call InviscidFluxWrapper(finv,vx,1,dt)
+      inlo=ixlo; inhi=ixhi
+      indx=1; indy=0;indz=0;
+      call ViscousFluxWrapper(fvis,vx,dudx,dbdx,1,dt,indx,indy,indz)
 c     
 #ifndef ONE_D
       inlo=iylo; inhi=iyhi
-C      call InviscidFlux(ginv,vrpy,ux,vx,2,dt)
-#ifdef UPWIND
-#ifdef PRIMITIVE
-      call InviscidFluxRP(ginv,vx,2,dt)
-#elif  ROE
-      call InviscidFluxRoe(ginv,vx,2,dt)
-#else
-      call InviscidFluxLF(ginv,vx,2,dt)
-#endif
-#else
-#ifdef TCD
-      call InviscidFluxTCD(ginv,vx,2,dt)
-#elif CD4
-      call InviscidFluxCD4(ginv,vx,2,dt)
-#elif ZIP
-      call InviscidFluxZip(ginv,vx,2,dt)
-#else
-      call InviscidFluxCD2(ginv,vx,2,dt)
-#endif
-#endif
+      call InviscidFluxWrapper(ginv,vx,2,dt)
       inlo = iylo;  inhi = iyhi
       indx = 0;  indy = 1;  indz = 0
-C      call ViscousFlux(gvis,vx,dudx,dbdx,2,dt,indx,indy,indz)
-#ifndef NOVISCFLUX
-#ifdef TCD
-      call ViscousFluxTCD(gvis,vx,dudx,dbdx,2,dt,indx,indy,indz)
-#elif CD4
-      call ViscousFluxCD4(gvis,vx,dudx,dbdx,2,dt,indx,indy,indz)
-#else
-      call ViscousFluxCD2(gvis,vx,dudx,dbdx,2,dt,indx,indy,indz)
-#endif
-#endif
+      call ViscousFluxWrapper(gvis,vx,dudx,dbdx,2,dt,indx,indy,indz)
 c     
 #ifndef TWO_D
       inlo=izlo; inhi=izhi
-C      call InviscidFlux(hinv,vrpz,ux,vx,3,dt)
-#ifdef UPWIND
-#ifdef PRIMITIVE
-      call InviscidFluxRP(hinv,vx,3,dt)
-#elif  ROE
-      call InviscidFluxRoe(hinv,vx,3,dt)
-#else
-      call InviscidFluxLF(hinv,vx,3,dt)
-#endif
-#else
-#ifdef TCD
-      call InviscidFluxTCD(hinv,vx,3,dt)
-#elif CD4
-      call InviscidFluxCD4(hinv,vx,3,dt)
-#elif ZIP
-      call InviscidFluxZip(hinv,vx,3,dt)
-#else
-      call InviscidFluxCD2(hinv,vx,3,dt)
-#endif
-#endif
+      call InviscidFluxWrapper(hinv,vx,3,dt)
       inlo = izlo;  inhi = izhi
       indx = 0;  indy = 0;  indz = 1
-C      call ViscousFlux(hvis,vx,dudx,dbdx,3,dt,indx,indy,indz)
-#ifndef NOVISCFLUX
-#ifdef TCD
-      call ViscousFluxTCD(hvis,vx,dudx,dbdx,3,dt,indx,indy,indz)
-#elif CD4
-      call ViscousFluxCD4(hvis,vx,dudx,dbdx,3,dt,indx,indy,indz)
-#else
-      call ViscousFluxCD2(hvis,vx,dudx,dbdx,3,dt,indx,indy,indz)
-#endif
-#endif
+      call ViscousFluxWrapper(hvis,vx,dudx,dbdx,3,dt,indx,indy,indz)
 #endif
 #endif
 c     
@@ -370,108 +202,24 @@ c
 #endif
       divb=0.D0
       inlo=ixlo; inhi=ixhi
-C      call InviscidFlux(finv,vrpx,ux,vx,1,dt)
-#ifdef UPWIND
-#ifdef PRIMITIVE
-      call InviscidFluxRP(finv,vx,1,dt)
-#elif  ROE
-      call InviscidFluxRoe(finv,vx,1,dt)
-#else
-      call InviscidFluxLF(finv,vx,1,dt)
-#endif
-#else
-#ifdef TCD
-      call InviscidFluxTCD(finv,vx,1,dt)
-#elif CD4
-      call InviscidFluxCD4(finv,vx,1,dt)
-#elif ZIP
-      call InviscidFluxZip(finv,vx,1,dt)
-#else
-      call InviscidFluxCD2(finv,vx,1,dt)
-#endif
-#endif
-      inlo = ixlo;  inhi = ixhi
-      indx = 1;  indy = 0;  indz = 0
-C      call ViscousFlux(fvis,vx,dudx,dbdx,1,dt,indx,indy,indz)
-#ifndef NOVISCFLUX
-#ifdef TCD
-      call ViscousFluxTCD(fvis,vx,dudx,dbdx,1,dt,indx,indy,indz)
-#elif CD4
-      call ViscousFluxCD4(fvis,vx,dudx,dbdx,1,dt,indx,indy,indz)
-#else
-      call ViscousFluxCD2(fvis,vx,dudx,dbdx,1,dt,indx,indy,indz)
-#endif
-#endif
+      call InviscidFluxWrapper(finv,vx,1,dt)
+      inlo=ixlo; inhi=ixhi
+      indx=1; indy=0;indz=0;
+      call ViscousFluxWrapper(fvis,vx,dudx,dbdx,1,dt,indx,indy,indz)
 c     
 #ifndef ONE_D
       inlo=iylo; inhi=iyhi
-C      call InviscidFlux(ginv,vrpy,ux,vx,2,dt)
-#ifdef UPWIND
-#ifdef PRIMITIVE
-      call InviscidFluxRP(ginv,vx,2,dt)
-#elif  ROE
-      call InviscidFluxRoe(ginv,vx,2,dt)
-#else
-      call InviscidFluxLF(ginv,vx,2,dt)
-#endif
-#else
-#ifdef TCD
-      call InviscidFluxTCD(ginv,vx,2,dt)
-#elif CD4
-      call InviscidFluxCD4(ginv,vx,2,dt)
-#elif ZIP
-      call InviscidFluxZip(ginv,vx,2,dt)
-#else
-      call InviscidFluxCD2(ginv,vx,2,dt)
-#endif
-#endif
+      call InviscidFluxWrapper(ginv,vx,2,dt)
       inlo = iylo;  inhi = iyhi
       indx = 0;  indy = 1;  indz = 0
-C      call ViscousFlux(gvis,vx,dudx,dbdx,2,dt,indx,indy,indz)
-#ifndef NOVISCFLUX
-#ifdef TCD
-      call ViscousFluxTCD(gvis,vx,dudx,dbdx,2,dt,indx,indy,indz)
-#elif CD4
-      call ViscousFluxCD4(gvis,vx,dudx,dbdx,2,dt,indx,indy,indz)
-#else
-      call ViscousFluxCD2(gvis,vx,dudx,dbdx,2,dt,indx,indy,indz)
-#endif
-#endif
+      call ViscousFluxWrapper(gvis,vx,dudx,dbdx,2,dt,indx,indy,indz)
 c     
 #ifndef TWO_D
       inlo=izlo; inhi=izhi
-C      call InviscidFlux(hinv,vrpz,ux,vx,3,dt)
-#ifdef UPWIND
-#ifdef PRIMITIVE
-      call InviscidFluxRP(hinv,vx,3,dt)
-#elif  ROE
-      call InviscidFluxRoe(hinv,vx,3,dt)
-#else
-      call InviscidFluxLF(hinv,vx,3,dt)
-#endif
-#else
-#ifdef TCD
-      call InviscidFluxTCD(hinv,vx,3,dt)
-#elif CD4
-      call InviscidFluxCD4(hinv,vx,3,dt)
-#elif ZIP
-      call InviscidFluxZip(hinv,vx,3,dt)
-#else
-      call InviscidFluxCD2(hinv,vx,3,dt)
-#endif
-#endif
+      call InviscidFluxWrapper(hinv,vx,3,dt)
       inlo = izlo;  inhi = izhi
       indx = 0;  indy = 0;  indz = 1
-C      call ViscousFlux(hvis,vx,dudx,dbdx,3,dt,indx,indy,indz)
-#ifndef NOVISCFLUX
-#ifdef TCD
-      call ViscousFluxTCD(hvis,vx,dudx,dbdx,3,dt,indx,indy,indz)
-#elif CD4
-      call ViscousFluxCD4(hvis,vx,dudx,dbdx,3,dt,indx,indy,indz)
-#else
-      call ViscousFluxCD2(hvis,vx,dudx,dbdx,3,dt,indx,indy,indz)
-#endif
-#endif
+      call ViscousFluxWrapper(hvis,vx,dudx,dbdx,3,dt,indx,indy,indz)
 #endif
 #endif
 c     
@@ -494,108 +242,24 @@ c
 #endif
       divb=0.D0
       inlo=ixlo; inhi=ixhi
-C      call InviscidFlux(finv,vrpx,ux,vx,1,dt)
-#ifdef UPWIND
-#ifdef PRIMITIVE
-      call InviscidFluxRP(finv,vx,1,dt)
-#elif  ROE
-      call InviscidFluxRoe(finv,vx,1,dt)
-#else
-      call InviscidFluxLF(finv,vx,1,dt)
-#endif
-#else
-#ifdef TCD
-      call InviscidFluxTCD(finv,vx,1,dt)
-#elif CD4
-      call InviscidFluxCD4(finv,vx,1,dt)
-#elif ZIP
-      call InviscidFluxZip(finv,vx,1,dt)
-#else
-      call InviscidFluxCD2(finv,vx,1,dt)
-#endif
-#endif
-      inlo = ixlo;  inhi = ixhi
-      indx = 1;  indy = 0;  indz = 0
-C      call ViscousFlux(fvis,vx,dudx,dbdx,1,dt,indx,indy,indz)
-#ifndef NOVISCFLUX
-#ifdef TCD
-      call ViscousFluxTCD(fvis,vx,dudx,dbdx,1,dt,indx,indy,indz)
-#elif CD4
-      call ViscousFluxCD4(fvis,vx,dudx,dbdx,1,dt,indx,indy,indz)
-#else
-      call ViscousFluxCD2(fvis,vx,dudx,dbdx,1,dt,indx,indy,indz)
-#endif
-#endif
+      call InviscidFluxWrapper(finv,vx,1,dt)
+      inlo=ixlo; inhi=ixhi
+      indx=1; indy=0;indz=0;
+      call ViscousFluxWrapper(fvis,vx,dudx,dbdx,1,dt,indx,indy,indz)
 c     
 #ifndef ONE_D
       inlo=iylo; inhi=iyhi
-C      call InviscidFlux(ginv,vrpy,ux,vx,2,dt)
-#ifdef UPWIND
-#ifdef PRIMITIVE
-      call InviscidFluxRP(ginv,vx,2,dt)
-#elif  ROE
-      call InviscidFluxRoe(ginv,vx,2,dt)
-#else
-      call InviscidFluxLF(ginv,vx,2,dt)
-#endif
-#else
-#ifdef TCD
-      call InviscidFluxTCD(ginv,vx,2,dt)
-#elif CD4
-      call InviscidFluxCD4(ginv,vx,2,dt)
-#elif ZIP
-      call InviscidFluxZip(ginv,vx,2,dt)
-#else
-      call InviscidFluxCD2(ginv,vx,2,dt)
-#endif
-#endif
+      call InviscidFluxWrapper(ginv,vx,2,dt)
       inlo = iylo;  inhi = iyhi
       indx = 0;  indy = 1;  indz = 0
-C      call ViscousFlux(gvis,vx,dudx,dbdx,2,dt,indx,indy,indz)
-#ifndef NOVISCFLUX
-#ifdef TCD
-      call ViscousFluxTCD(gvis,vx,dudx,dbdx,2,dt,indx,indy,indz)
-#elif CD4
-      call ViscousFluxCD4(gvis,vx,dudx,dbdx,2,dt,indx,indy,indz)
-#else
-      call ViscousFluxCD2(gvis,vx,dudx,dbdx,2,dt,indx,indy,indz)
-#endif
-#endif
+      call ViscousFluxWrapper(gvis,vx,dudx,dbdx,2,dt,indx,indy,indz)
 c     
 #ifndef TWO_D
       inlo=izlo; inhi=izhi
-C      call InviscidFlux(hinv,vrpz,ux,vx,3,dt)
-#ifdef UPWIND
-#ifdef PRIMITIVE
-      call InviscidFluxRP(hinv,vx,3,dt)
-#elif  ROE
-      call InviscidFluxRoe(hinv,vx,3,dt)
-#else
-      call InviscidFluxLF(hinv,vx,3,dt)
-#endif
-#else
-#ifdef TCD
-      call InviscidFluxTCD(hinv,vx,3,dt)
-#elif CD4
-      call InviscidFluxCD4(hinv,vx,3,dt)
-#elif ZIP
-      call InviscidFluxZip(hinv,vx,3,dt)
-#else
-      call InviscidFluxCD2(hinv,vx,3,dt)
-#endif
-#endif
+      call InviscidFluxWrapper(hinv,vx,3,dt)
       inlo = izlo;  inhi = izhi
       indx = 0;  indy = 0;  indz = 1
-C      call ViscousFlux(hvis,vx,dudx,dbdx,3,dt,indx,indy,indz)
-#ifndef NOVISCFLUX
-#ifdef TCD
-      call ViscousFluxTCD(hvis,vx,dudx,dbdx,3,dt,indx,indy,indz)
-#elif CD4
-      call ViscousFluxCD4(hvis,vx,dudx,dbdx,3,dt,indx,indy,indz)
-#else
-      call ViscousFluxCD2(hvis,vx,dudx,dbdx,3,dt,indx,indy,indz)
-#endif
-#endif
+      call ViscousFluxWrapper(hvis,vx,dudx,dbdx,3,dt,indx,indy,indz)
 #endif
 #endif
 c     
