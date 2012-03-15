@@ -44,7 +44,7 @@ c======= Declarations =========
       double precision :: ux(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar)
       double precision :: phi(ixlo:ixhi,iylo:iyhi,izlo:izhi)
 #endif
-      double precision :: ttot, dtexp, dtfac, tstop
+      double precision :: ttot, dtexp, dthyp, dtvisc, dtfac, tstop
       integer          :: istart, maxiter, lastiter
       integer          :: output_flag, binary_flag
       integer          :: ndump, ndiag, new
