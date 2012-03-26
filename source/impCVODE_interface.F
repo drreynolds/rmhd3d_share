@@ -257,7 +257,6 @@ c======= Declarations =========
       integer          :: prectype, lsolver, gstype, maxl, mxbdf
       integer          :: mxsteps, mxwarn, stlimit, mxerrfails
       integer          :: mxnewtit, mxconvfails, cvierr, cvierrtot
-      integer          :: ADIcorrection
       logical          :: outnode, iofile
       double precision :: lintol, dtinit, maxdt, mindt, nonlincoeff
       double precision :: rtol, atol1, atol2, atol3, atol4, atol5
@@ -567,6 +566,26 @@ c        preconditioner solver specification
 #endif
 
 
+c     call custom preconditioner initialization routines
+      call combo_prec_init(cvierr)
+#ifdef PARALLEL
+      call MPI_Allreduce(cvierr, cvierrtot, 1, MPI_INTEGER, MPI_SUM, 
+     &     comm3d, ierr)
+      if (cvierrtot /= 0) then
+         if(outnode) print *,' impCVODE_driver: combo_prec_init failed'
+         if (cvierr /= 0) print '(A,i4,A,i2)','    proc ',my_id,
+     &        ': ier =',cvierr
+         return
+      end if
+      call mpi_barrier(comm3d,ierr)
+#else
+      if (cvierr /= 0) then
+         print '(A,A,i2)',' impCVODE_driver: combo_prec_init failed, ',
+     &        ' ier =',cvierr 
+         return
+      end if
+#endif
+
       return
       end subroutine CvodeInit
 c=================================================================
@@ -586,6 +605,9 @@ c======= Declarations =========
 
 c======= Internals ============
 
+
+c     free preconditioner data
+      call combo_prec_free()
 
 c     free cvode internal data
       call fcvfree
@@ -732,6 +754,7 @@ c     if required (jok), call preconditioning setup routine
       if (jok == 0) then
 
 c        set up preconditioners
+         call combo_prec_setup(uu, fu, gamdt, v1, v2, cvier)
 
 c        update jcur flag
          jcur = 1
@@ -801,12 +824,13 @@ c     start the preconditioner solve profiler
       call prof_start(5)
 
 c     reduce delta by a reasonable amount
-      delta = delta/1.d6
+      delta = delta*1.d-4
 
 c     copy rhs into solution so that solver only uses one vector
       zz = rr
 
 c     call preconditioner solvers
+      call combo_prec_solve(uu, fu, gamdt, delta, zz, vt, cvier)
 
 c     re-set vt to ameliorate cvode bug
       vt = 0.d0
@@ -1279,3 +1303,228 @@ c
       return
       end subroutine divFlux
 c=======================================================================
+
+
+
+
+
+      subroutine divFlux_viscous(uu,dFlux)
+c-----------------------------------------------------------------------
+c     Description: divFlux_viscous provides a centered-difference 
+c        spatial approximation to the divergence of the flux for the 
+c        viscous portion of the conservation equation describing the 
+c        single-fluid resistive MHD system.
+c
+c     Arguments:
+c           uu - (dbl(*), input) fluid variables at new time
+c        dFlux - (dbl(*), output) divergence of the flux
+c-----------------------------------------------------------------------
+c======= Inclusions ===========
+      use mesh
+      use properties
+      use cvode_data
+
+c======= Declarations =========
+      implicit none
+
+c     calling variables
+      double precision, dimension(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar) 
+     &     :: uu, dFlux
+
+c     differencing factors
+      double precision :: xfac, yfac, zfac, dt
+
+c     indexes for flux calculations
+      integer :: indx, indy, indz, i, j, k, l, m
+      
+
+
+c======= Internals ============
+
+#ifndef NOVISCFLUX
+
+c     set differencing factors
+      xfac = 1.0d0/dx;  yfac = 1.0d0/dy;  zfac = 1.0d0/dz
+
+c     set dt value (unused, but passed to flux routines anyway)
+      dt = 0.0d0
+
+c     construct the vector of primitive variables
+      call ConservedToPrimitive(uu,vv)
+
+c     zero the fluxes (necessary???)
+      fvis = 0.0d0
+#ifndef ONE_D
+      gvis = 0.0d0
+#ifndef TWO_D
+      hvis = 0.0d0
+#endif
+#endif
+
+c     get the viscous flux requirements dudx and dbdx
+      do m=1,3,1
+         dudx(:,:,:,1,m) = vv(:,:,:,m+1)
+         dbdx(:,:,:,1,m) = vv(:,:,:,m+4)
+         dudx(:,:,:,2,m) = 0.d0
+         dbdx(:,:,:,2,m) = 0.d0
+         dudx(:,:,:,3,m) = 0.d0
+         dbdx(:,:,:,3,m) = 0.d0
+      end do
+      call GradientVector(dudx)
+      call GradientVector(dbdx)
+
+
+c------------ x-directional fluxes ------------
+c     Parabolic fluxes
+      inlo = ixlo;  inhi = ixhi
+      indx = 1;  indy = 0;  indz = 0
+      call ViscousFluxWrapper(fvis,vv,dudx,dbdx,1,dt,indx,indy,indz)
+
+
+c------------ y-directional fluxes ------------
+#ifndef ONE_D
+c     Parabolic fluxes
+      inlo = iylo;  inhi = iyhi
+      indx = 0;  indy = 1;  indz = 0
+      call ViscousFluxWrapper(gvis,vv,dudx,dbdx,2,dt,indx,indy,indz)
+
+
+c------------ z-directional fluxes ------------
+#ifndef TWO_D
+c     Parabolic fluxes
+      inlo = izlo;  inhi = izhi
+      indx = 0;  indy = 0;  indz = 1
+      call ViscousFluxWrapper(hvis,vv,dudx,dbdx,3,dt,indx,indy,indz)
+#endif
+#endif
+
+
+c------------ construction of div(flux) ------------
+c
+c     Density
+      do k=1,nzlocal,1
+         do j=1,nylocal,1
+            do i=1,nxlocal,1
+               dFlux(i,j,k,1) = 0.d0
+            end do
+         end do
+      end do
+c
+c     X-Momentum
+      do k=1,nzlocal,1
+         do j=1,nylocal,1
+            do i=1,nxlocal,1
+               dFlux(i,j,k,2) = 
+     &               xfac*( fvis(i,j,k,2) - fvis(i-1,j,k,2) )
+#ifndef ONE_D
+     &              +yfac*( gvis(i,j,k,4) - gvis(i,j-1,k,4) )
+#ifndef TWO_D
+     &              +zfac*( hvis(i,j,k,3) - hvis(i,j,k-1,3) )
+#endif
+#endif
+            end do
+         end do
+      end do
+c
+c     Y-Momentum
+      do k=1,nzlocal,1
+         do j=1,nylocal,1
+            do i=1,nxlocal,1
+               dFlux(i,j,k,3) =
+     &               xfac*( fvis(i,j,k,3) - fvis(i-1,j,k,3) )
+#ifndef ONE_D
+     &              +yfac*( gvis(i,j,k,2) - gvis(i,j-1,k,2) )
+#ifndef TWO_D
+     &              +zfac*( hvis(i,j,k,4) - hvis(i,j,k-1,4) )
+#endif
+#endif
+            end do
+         end do
+      end do
+c
+c     Z-Momentum
+      do k=1,nzlocal,1
+         do j=1,nylocal,1
+            do i=1,nxlocal,1
+               dFlux(i,j,k,4) = 
+     &               xfac*( fvis(i,j,k,4) - fvis(i-1,j,k,4) )
+#ifndef ONE_D
+     &              +yfac*( gvis(i,j,k,3) - gvis(i,j-1,k,3) )
+#ifndef TWO_D
+     &              +zfac*( hvis(i,j,k,2) - hvis(i,j,k-1,2) )
+#endif
+#endif
+            end do
+         end do
+      end do
+c
+c     X-Magnetic field
+      do k=1,nzlocal,1
+         do j=1,nylocal,1
+            do i=1,nxlocal,1
+               dFlux(i,j,k,5) = 
+     &               xfac*( fvis(i,j,k,5) - fvis(i-1,j,k,5) )
+#ifndef ONE_D
+     &              +yfac*( gvis(i,j,k,7) - gvis(i,j-1,k,7) )
+#ifndef TWO_D
+     &              +zfac*( hvis(i,j,k,6) - hvis(i,j,k-1,6) )
+#endif
+#endif
+            end do
+         end do
+      end do
+c
+c     Y-Magnetic field
+      do k=1,nzlocal,1
+         do j=1,nylocal,1
+            do i=1,nxlocal,1
+               dFlux(i,j,k,6) = 
+     &               xfac*( fvis(i,j,k,6) - fvis(i-1,j,k,6) )
+#ifndef ONE_D
+     &              +yfac*( gvis(i,j,k,5) - gvis(i,j-1,k,5) )
+#ifndef TWO_D
+     &              +zfac*( hvis(i,j,k,7) - hvis(i,j,k-1,7) )
+#endif
+#endif
+            end do
+         end do
+      end do
+c
+c     Z-Magnetic field
+      do k=1,nzlocal,1
+         do j=1,nylocal,1
+            do i=1,nxlocal,1
+               dFlux(i,j,k,7) = 
+     &               xfac*( fvis(i,j,k,7) - fvis(i-1,j,k,7) )
+#ifndef ONE_D
+     &              +yfac*( gvis(i,j,k,6) - gvis(i,j-1,k,6) )
+#ifndef TWO_D
+     &              +zfac*( hvis(i,j,k,5) - hvis(i,j,k-1,5) )
+#endif
+#endif
+            end do
+         end do
+      end do
+c
+c     Energy
+      do k=1,nzlocal,1
+         do j=1,nylocal,1
+            do i=1,nxlocal,1
+               dFlux(i,j,k,8) = 
+     &               xfac*( fvis(i,j,k,8) - fvis(i-1,j,k,8) )
+#ifndef ONE_D
+     &              +yfac*( gvis(i,j,k,8) - gvis(i,j-1,k,8) )
+#ifndef TWO_D
+     &              +zfac*( hvis(i,j,k,8) - hvis(i,j,k-1,8) )
+#endif
+#endif
+            end do
+         end do
+      end do
+
+#endif
+
+      return
+      end subroutine divFlux_viscous
+c=======================================================================
+

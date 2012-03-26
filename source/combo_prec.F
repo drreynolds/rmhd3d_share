@@ -66,12 +66,12 @@ c======= Inclusions ===========
 
 c======= Declarations =========
       implicit none
-      integer :: kier, kiertot, ADIcorrection
+      integer :: kier, kiertot
       logical :: outnode, iofile
       integer(kind=sund_long_int) :: xlocal, ylocal, zlocal, nspecies
       integer(kind=sund_long_int) :: xghost, yghost, zghost
       namelist /prec/   hprec, vprec, method
-      namelist /fwprec/ NWaves, ordering, ADIcorrection 
+      namelist /fwprec/ NWaves, ordering
 
 
 c======= Internals ============
@@ -82,29 +82,12 @@ c     input preconditioner options
       inquire(file='prec.inp',exist=iofile) 
       if (iofile) then 
          open(unit=201,file='prec.inp',status='old') 
-         read(201,nml=prec) 
-         if (ADIcorrection == 0) then 
-            ADIcorr = .false. 
-         endif 
-         if ((Nwaves<0) .or. (Nwaves>8)) then 
-            Nwaves = 8 
-         endif 
-         if ((ordering<0) .or. (ordering>2)) then 
-            ordering = 0 
-         endif 
 
 c        if using fastwave preconditioner, input options
          if (hprec == 1) then
             read(201,nml=fwprec) 
-            if (ADIcorrection == 0) then 
-               ADIcorr = .false. 
-            endif 
-            if ((Nwaves<0) .or. (Nwaves>8)) then 
-               Nwaves = 8 
-            endif 
-            if ((ordering<0) .or. (ordering>2)) then 
-               ordering = 0 
-            endif 
+            if ((Nwaves<0) .or. (Nwaves>8))      Nwaves = 8 
+            if ((ordering<0) .or. (ordering>2))  ordering = 0 
          endif
          close(unit=201,status='keep') 
       endif 
@@ -120,7 +103,6 @@ c     ouptut preconditioner configuration to stdout
             write(*,*) 'FastWave Preconditioner options:' 
             write(*,'(A,i2)') '    NWaves =',NWaves 
             write(*,'(A,i2)') '    ordering =',ordering 
-            write(*,*) '   ADIcorr =',ADIcorr 
          endif
       endif
 

@@ -299,7 +299,6 @@ c======= Declarations =========
       integer          :: lsolver, maxl, maxlrst
       integer          :: kinprint, mxnewtit, initpcond
       integer          :: inchoice, suppmintol, kier, kiertot
-      integer          :: ADIcorrection 
       logical          :: outnode, iofile 
       double precision :: fnormtol, scsteptol
       double precision :: mxnewtstep, frelerr, etaconst
@@ -629,6 +628,27 @@ c        preconditioner setup/solve (0 => default, 1 => custom routine)
 #endif
 
 
+c     call custom preconditioner initialization routines
+      call combo_prec_init(kier)
+#ifdef PARALLEL
+      call MPI_Allreduce( kier, kiertot, 1, MPI_INTEGER, MPI_SUM, 
+     &     comm3d, ierr)
+      if (kiertot /= 0) then
+         if(outnode) print *,' impRMHD_driver: combo_prec_init failed'
+         if (kier /= 0) print '(A,i4,A,i2)','    proc ',my_id,
+     &        ': ier =',kier
+         return
+      end if
+      call mpi_barrier(comm3d,ierr)
+#else
+      if (kier /= 0) then
+         print '(A,A,i2)',' impRMHD_driver: combo_prec_init failed, ',
+     &        ' ier =',kier 
+         return
+      end if
+#endif
+
+
 c        set uscale and fscale vectors
       uscale(:,:,:,1) = u1sc;  uscale(:,:,:,2) = u2sc
       uscale(:,:,:,3) = u3sc;  uscale(:,:,:,4) = u4sc
@@ -672,6 +692,9 @@ c======= Declarations =========
 
 c======= Internals ============
 
+
+c     free preconditioner data
+      call combo_prec_free()
 
 c     free kinsol internal data
       call fkinfree
@@ -802,6 +825,7 @@ c     set gamdt (in the general Jacobian sense of Jtot = I - gamdt*Jf)
       gamdt = theta*dt
 
 c     set up preconditioners
+      call combo_prec_setup(uu, fu, gamdt, v1, v2, kier)
 
 c     stop the preconditioner setup profiler
       call prof_stop(4)
@@ -856,7 +880,12 @@ c     start the preconditioner solve profiler
 c     set gamdt (in the general Jacobian sense of Jtot = I - gamdt*Jf)
       gamdt = theta*dt
 
+c     set delta to the desired viscous preconditioner tolerance
+      call fnvmhdmaxnorm(fu,fnorm)
+      delta = 1.d-2*fnorm
+
 c     call preconditioner solvers
+      call combo_prec_solve(uu, fu, gamdt, delta, zz, vt, kier)
 
 c     stop the preconditioner solve profiler
       call prof_stop(5)
@@ -1423,4 +1452,223 @@ c
 
       return
       end subroutine divFlux
+c=======================================================================
+
+
+
+
+
+      subroutine divFlux_viscous(uu,dFlux)
+c-----------------------------------------------------------------------
+c     Description: divFlux_viscous provides a centered-difference 
+c        spatial approximation to the divergence of the flux for the 
+c        viscous portion of the conservation equation describing the 
+c        single-fluid resistive, ideal MHD system.
+c
+c     Arguments:
+c           uu - (dbl(*), input) fluid variables at new time
+c        dFlux - (dbl(*), output) divergence of the flux
+c-----------------------------------------------------------------------
+c======= Inclusions ===========
+      use mesh
+      use properties
+      use timelevel_data
+
+c======= Declarations =========
+      implicit none
+
+c     calling variables
+      double precision, dimension(ixlo:ixhi,iylo:iyhi,izlo:izhi,nvar) 
+     &     :: uu, dFlux
+
+c     differencing factors (depending on dimension)
+      double precision :: xfac, yfac, zfac
+
+c     indexes for flux calculations
+      integer :: indx, indy, indz, i, j, k, l, m
+      
+
+
+c======= Internals ============
+
+#ifndef NOVISCFLUX
+
+c     set differencing factors
+      xfac = 1.0d0/dx;  yfac = 1.0d0/dy;  zfac = 1.0d0/dz
+
+
+c     construct the vector of primitive variables
+      call ConservedToPrimitive(uu,vv)
+
+
+c     zero the fluxes (necessary???)
+      fvis = 0.0d0
+#ifndef ONE_D
+      gvis = 0.0d0
+#ifndef TWO_D
+      hvis = 0.0d0
+#endif
+#endif
+
+c     get the viscous flux requirements dudx and dbdx
+      do m=1,3,1
+         dudx(:,:,:,1,m) = vv(:,:,:,m+1)
+         dbdx(:,:,:,1,m) = vv(:,:,:,m+4)
+         dudx(:,:,:,2,m) = 0.d0
+         dbdx(:,:,:,2,m) = 0.d0
+         dudx(:,:,:,3,m) = 0.d0
+         dbdx(:,:,:,3,m) = 0.d0
+      end do
+      call GradientVector(dudx)
+      call GradientVector(dbdx)
+
+c------------ x-directional viscous fluxes ------------
+      inlo = ixlo;  inhi = ixhi
+      indx = 1;  indy = 0;  indz = 0
+      call ViscousFluxWrapper(fvis,vv,dudx,dbdx,1,dt,indx,indy,indz)
+
+
+#ifndef ONE_D
+c------------ y-directional viscous fluxes ------------
+      inlo = iylo;  inhi = iyhi
+      indx = 0;  indy = 1;  indz = 0
+      call ViscousFluxWrapper(gvis,vv,dudx,dbdx,2,dt,indx,indy,indz)
+
+
+#ifndef TWO_D
+c------------ z-directional viscous fluxes ------------
+      inlo = izlo;  inhi = izhi
+      indx = 0;  indy = 0;  indz = 1
+      call InviscidFluxWrapper(hinv,vv,3,dt)
+#endif
+#endif
+
+
+c------------ construction of div(flux) ------------
+c
+c     Density
+      do k=1,nzlocal,1
+         do j=1,nylocal,1
+            do i=1,nxlocal,1
+               dFlux(i,j,k,1) = 0.d0
+            enddo
+         enddo
+      enddo
+c
+c     X-Momentum
+      do k=1,nzlocal,1
+         do j=1,nylocal,1
+            do i=1,nxlocal,1
+               dFlux(i,j,k,2) = 
+     &               xfac*( fvis(i,j,k,2) - fvis(i-1,j,k,2) )
+#ifndef ONE_D
+     &              +yfac*( gvis(i,j,k,4) - gvis(i,j-1,k,4) )
+#ifndef TWO_D
+     &              +zfac*( hvis(i,j,k,3) - hvis(i,j,k-1,3) )
+#endif
+#endif
+            enddo
+         enddo
+      enddo
+c
+c     Y-Momentum
+      do k=1,nzlocal,1
+         do j=1,nylocal,1
+            do i=1,nxlocal,1
+               dFlux(i,j,k,3) = 
+     &               xfac*( fvis(i,j,k,3) - fvis(i-1,j,k,3) )
+#ifndef ONE_D
+     &              +yfac*( gvis(i,j,k,2) - gvis(i,j-1,k,2) )
+#ifndef TWO_D
+     &              +zfac*( hvis(i,j,k,4) - hvis(i,j,k-1,4) )
+#endif
+#endif
+            enddo
+         enddo
+      enddo
+c
+c     Z-Momentum
+      do k=1,nzlocal,1
+         do j=1,nylocal,1
+            do i=1,nxlocal,1
+               dFlux(i,j,k,4) = 
+     &               xfac*( fvis(i,j,k,4) - fvis(i-1,j,k,4) )
+#ifndef ONE_D
+     &              +yfac*( gvis(i,j,k,3) - gvis(i,j-1,k,3) )
+#ifndef TWO_D
+     &              +zfac*( hvis(i,j,k,2) - hvis(i,j,k-1,2) )
+#endif
+#endif
+            enddo
+         enddo
+      enddo
+c
+c     X-Magnetic field
+      do k=1,nzlocal,1
+         do j=1,nylocal,1
+            do i=1,nxlocal,1
+               dFlux(i,j,k,5) = 
+     &               xfac*( fvis(i,j,k,5) - fvis(i-1,j,k,5) )
+#ifndef ONE_D
+     &              +yfac*( gvis(i,j,k,7) - gvis(i,j-1,k,7) )
+#ifndef TWO_D
+     &              +zfac*( hvis(i,j,k,6) - hvis(i,j,k-1,6) )
+#endif
+#endif
+            enddo
+         enddo
+      enddo
+c
+c     Y-Magnetic field
+      do k=1,nzlocal,1
+         do j=1,nylocal,1
+            do i=1,nxlocal,1
+               dFlux(i,j,k,6) = 
+     &               xfac*( fvis(i,j,k,6) - fvis(i-1,j,k,6) )
+#ifndef ONE_D
+     &              +yfac*( gvis(i,j,k,5) - gvis(i,j-1,k,5) )
+#ifndef TWO_D
+     &              +zfac*( hvis(i,j,k,7) - hvis(i,j,k-1,7) )
+#endif
+#endif
+            enddo
+         enddo
+      enddo
+c
+c     Z-Magnetic field
+      do k=1,nzlocal,1
+         do j=1,nylocal,1
+            do i=1,nxlocal,1
+               dFlux(i,j,k,7) = 
+     &               xfac*( fvis(i,j,k,7) - fvis(i-1,j,k,7) )
+#ifndef ONE_D
+     &              +yfac*( gvis(i,j,k,6) - gvis(i,j-1,k,6) )
+#ifndef TWO_D
+     &              +zfac*( hvis(i,j,k,5) - hvis(i,j,k-1,5) )
+#endif
+#endif
+            enddo
+         enddo
+      enddo
+c
+c     Energy
+      do k=1,nzlocal,1
+         do j=1,nylocal,1
+            do i=1,nxlocal,1
+               dFlux(i,j,k,8) = 
+     &               xfac*( fvis(i,j,k,8) - fvis(i-1,j,k,8) )
+#ifndef ONE_D
+     &              +yfac*( gvis(i,j,k,8) - gvis(i,j-1,k,8) )
+#ifndef TWO_D
+     &              +zfac*( hvis(i,j,k,8) - hvis(i,j,k-1,8) )
+#endif
+#endif
+            enddo
+         enddo
+      enddo
+
+#endif
+
+      return
+      end subroutine divFlux_viscous
 c=======================================================================

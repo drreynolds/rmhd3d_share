@@ -207,7 +207,7 @@ c$$$      endif
 
 c     construct/save the parallelism information and 1D process 
 c     communicators for this process
-      if (ptri_set == .false.) then
+      if (.not. ptri_set) then
 
          dims = 3
 #ifdef ONE_D

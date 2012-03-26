@@ -52,16 +52,21 @@ HEADS = nvector_mhd.h mesh.h mesh_common.h mesh_parms.h  \
         mesh_uparms_static.h mgparams.h mpistuff.h boundaries.h
 HEADERS = $(addprefix include/, $(HEADS))
 
+# preconditioning files (hyperbolic and diffusive, respectively)
+PRECSRCH = ptri_parallel fastwave_prec
+PRECSRCD = viscous_prec-Du viscous_prec-Db viscous_prec-De \
+           vprec_solver vprec_mult combo_prec
+
 # expStatic source files and corresp. object files
 SRC1 = $(ALLSRC) $(EXPSRC) init_static
 OBJ1 = $(addprefix source/, $(addsuffix .o, $(SRC1)))
 
 # kinStatic source files and corresp object files
-SRC2 = $(ALLSRC) $(KINSRC) init_static
+SRC2 = $(ALLSRC) $(KINSRC) $(PRECSRCH) $(PRECSRCD) init_static
 OBJ2 = $(addprefix source/, $(addsuffix .o, $(SRC2)))
 
 # cvStatic source files and corresp object files
-SRC4 = $(ALLSRC) $(CVSRC) init_static
+SRC4 = $(ALLSRC) $(CVSRC) $(PRECSRCH) $(PRECSRCD) init_static
 OBJ4 = $(addprefix source/, $(addsuffix .o, $(SRC4)))
 
 # expLinWave source files and corresp. object files
@@ -69,11 +74,11 @@ SRC6 = $(ALLSRC) $(EXPSRC) initwave3
 OBJ6 = $(addprefix source/, $(addsuffix .o, $(SRC6)))
 
 # kinLinWave source files and corresp. object files
-SRC8 = $(ALLSRC) $(KINSRC) initwave3
+SRC8 = $(ALLSRC) $(KINSRC) $(PRECSRCH) initwave3
 OBJ8 = $(addprefix source/, $(addsuffix .o, $(SRC8)))
 
 # cvLinWave source files and corresp. object files
-SRC7 = $(ALLSRC) $(CVSRC) initwave3
+SRC7 = $(ALLSRC) $(CVSRC) $(PRECSRCH) initwave3
 OBJ7 = $(addprefix source/, $(addsuffix .o, $(SRC7)))
 
 # expKH source files and corresp. object files
@@ -81,11 +86,11 @@ SRC9 = $(ALLSRC) $(EXPSRC) initKH
 OBJ9 = $(addprefix source/, $(addsuffix .o, $(SRC9)))
 
 # kinKH source files and corresp. object files
-SRC11 = $(ALLSRC) $(KINSRC) initKH 
+SRC11 = $(ALLSRC) $(KINSRC) $(PRECSRCH) $(PRECSRCD) initKH 
 OBJ11 = $(addprefix source/, $(addsuffix .o, $(SRC11)))
 
 # cvKH source files and corresp. object files
-SRC10 = $(ALLSRC) $(CVSRC) initKH
+SRC10 = $(ALLSRC) $(CVSRC) $(PRECSRCH) $(PRECSRCD) initKH
 OBJ10 = $(addprefix source/, $(addsuffix .o, $(SRC10)))
 
 # exp_island source files and corresp. object files
@@ -93,15 +98,15 @@ SRC12 = $(ALLSRC) $(EXPSRC) init_island
 OBJ12 = $(addprefix source/, $(addsuffix .o, $(SRC12)))
 
 # kin_island source files and corresp. object files
-SRC13 = $(ALLSRC) $(KINSRC) init_island
+SRC13 = $(ALLSRC) $(KINSRC) $(PRECSRCH) $(PRECSRCD) init_island
 OBJ13 = $(addprefix source/, $(addsuffix .o, $(SRC13)))
 
 # cv_island source files and corresp. object files
-SRC14 = $(ALLSRC) $(CVSRC) init_island
+SRC14 = $(ALLSRC) $(CVSRC) $(PRECSRCH) $(PRECSRCD) init_island
 OBJ14 = $(addprefix source/, $(addsuffix .o, $(SRC14)))
 
 # petsc_island source files and corresp. object files
-SRC15 = $(ALLSRC) $(PETSCSRC) init_island
+SRC15 = $(ALLSRC) $(PETSCSRC) $(PRECSRCH) $(PRECSRCD) init_island
 OBJ15 = $(addprefix source/, $(addsuffix .o, $(SRC15)))
 
 # fnvec_mhd_test source files and corresp. object files
@@ -120,10 +125,14 @@ SUND_LIBS   = -lm
 CVODE_LIBS  = -lsundials_fcvode -lsundials_cvode 
 KINSOL_LIBS = -lsundials_fkinsol -lsundials_kinsol
 
+# HYPRE interface requirements
+HYPRE_INCD   = -I${HYPREROOT}/include
+HYPRE_LIBS   = -L${HYPREROOT}/lib -lHYPRE -L${LAPACK}/lib -llapack
+
 # Final usable variables
-INCS    = -Iinclude ${MPI_INCD} ${SUND_INCD} ${C_INCD} ${PETSC_INCD} ${SILO_INCD}
-KLIBS   = ${SUND_LIBD} ${KINSOL_LIBS} ${SUND_LIBS} ${MPI_LIBD} ${MPI_LIBS} ${SILO_LIBS}
-CVLIBS  = ${SUND_LIBD} ${CVODE_LIBS} ${SUND_LIBS} ${MPI_LIBD} ${MPI_LIBS} ${SILO_LIBS}
+INCS    = -Iinclude ${MPI_INCD} ${SUND_INCD} ${C_INCD} ${HYPRE_INCD} ${PETSC_INCD} ${SILO_INCD}
+KLIBS   = ${SUND_LIBD} ${KINSOL_LIBS} ${SUND_LIBS} ${HYPRE_LIBS} ${MPI_LIBD} ${MPI_LIBS} ${SILO_LIBS}
+CVLIBS  = ${SUND_LIBD} ${CVODE_LIBS} ${SUND_LIBS} ${HYPRE_LIBS} ${MPI_LIBD} ${MPI_LIBS} ${SILO_LIBS}
 KLIBSH  = ${SUND_LIBD} ${KINSOL_LIBS} ${SUND_LIBS} ${MPI_LIBD} ${MPI_LIBS} ${SILO_LIBS}
 CVLIBSH = ${SUND_LIBD} ${CVODE_LIBS} ${SUND_LIBS} ${MPI_LIBD} ${MPI_LIBS} ${SILO_LIBS}
 
